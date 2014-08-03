@@ -9,15 +9,26 @@
 *.a
 
 # Shared objects (inc. Windows DLLs)
-*.dll
 *.so
 *.so.*
 *.dylib
 
 # Executables
-*.exe
 *.out
 *.app
 *.i*86
 *.x86_64
 *.hex
+
+*.swp
+
+build/
+
+autom4te.cache/
+autoscan.log
+config.log
+*.m4
+Makefile
+config.h
+*~
+stamp-h1

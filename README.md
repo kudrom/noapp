@@ -1,4 +1,0 @@
-noapp
-=====
-
-The NoApp framework

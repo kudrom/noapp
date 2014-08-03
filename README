@@ -1,0 +1,67 @@
+NoApp
+=====
+
+The NoApp framework is 'Not only A pet project' born to understand several technologies that have amazed me during this summer. And yes, I'm joking with the name.
+
+I have been thinking about the possibility to ease certain difficult activities that the common public faces and the hypothetical help that a multi-modal interface would pose to that goal. I think that it can be funny to develop a framework that integrates the voice as a way to complement the way GUIs drive the interaction between a human and a computer.
+
+The goal is to develop a framework that will allow applications to use both a GUI and a VUI (Voice User Interface) to drive an activity.
+
+I've chosen Qt as the GUI because I like the way Mer/Nemo/SailfishOS are built around QML/C++/Wayland.
+
+
+Architecture
+===========
+
+The initial step is to create the required infrastructure composed of four big subsystems:
+    1) Audio Server
+    2) Translator
+    3) Parser
+    4) Dialogue Manager
+
+Audio Server
+-----------
+
+It's main responsibility is to detect and capture the utterances of the user and to send them to the Translator.
+
+It's built around PulseAudio.
+
+Translator
+---------
+
+It's main responsibility is to translate the recorded audio file and send it to the parser.
+
+It's built around CMU Sphinx.
+
+Parser
+-----
+
+It's main responsibility is to tag the translation according to a certain grammar, which (by the way) is the major responsible of the UX success or failure due to the fact that it constraints/enhances the way the user transmits its desire to the machine.
+
+Dialogue Manager
+---------------
+
+It's main responsibility is to find the proper handler of the proper application to the given utterance. It's the most dynamic component of the four and it should allow the user to talk to the machine, not to send it a bunch of commands. The way the DM builds dialogues will determine the way the user understands the application.
+
+It uses D-BUS to talk to the application.
+
+
+Every component is isolated and can be changed without not too much fuss.
+
+Users
+=====
+
+The two main users that NoApp is built around are the developers and the final users of the apps build with NoApp.
+
+NoApp takes care of the developers offering them a way to express a dialogue that complements a certain GUI. I love the declarative style of QML and how it changes the perspective of building GUIs. I want to enhance that way of thinking by changing the way a UI is built using not only graphics but also the voice. The App side of NoApp focus on building an expressive way of writing dialogues in code.
+
+NoApp takes care of the final users by allowing them to approach difficult activities in the same way that they would if they could: using more senses to gather more information that can be used to solve the initial problem. I'm a little bit angry about the fact that almost nobody uses basic security mechanisms, right now security is not usable. Maybe if we expand the User Interfaces surface, someone will come up with a new way to express how to send a dammed ciphered email that is usable.
+
+
+Installation
+===========
+
+I'm using autotools so just type the magic words:
+./configure
+make
+make install

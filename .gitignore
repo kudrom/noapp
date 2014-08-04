@@ -24,11 +24,12 @@
 
 build/
 
+# bootstrap file
 autom4te.cache/
-autoscan.log
-config.log
 *.m4
-Makefile
-config.h
-*~
-stamp-h1
+*.in
+missing
+install-sh
+depcomp
+configure
+compile

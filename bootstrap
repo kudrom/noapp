@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+automake --add-missing 2> /dev/null
+status_am=$?
+
+autoreconf 2> /dev/null
+status_ar=$?
+
+if [ $status_ar != 0 ]
+then
+    automake --add-missing
+fi
+
+if [ $status_am != 0 ]
+then
+    autoreconf
+fi

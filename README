@@ -61,7 +61,7 @@ NoApp takes care of the final users by allowing them to approach difficult activ
 Installation
 ===========
 
-I'm using autotools so first you should generate the configure script with ./bootstrap and the just:
+I'm using autotools so first you should generate the configure script with ./bootstrap and then just:
 ./configure
 make
 make install

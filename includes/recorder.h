@@ -8,6 +8,7 @@ struct recorder_context{
     FILE *recording_file;
     int pa_ready;
     bool mute;
+    bool started;
     pa_mainloop *pa_ml;
     pa_context *pa_ctx;
     pa_stream *recording_stream;

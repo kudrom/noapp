@@ -2,9 +2,16 @@
 #include <errno.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "recorder.h"
 
-static void pa_state_cb(pa_context *ctx, void *userdata){
+void SIGINT_handler(int sig);
+// Is there any way to avoid using this global because of the SIGINT handler?
+static recorder_context_t *g_rctx;
+
+static void pa_state_cb(pa_context *ctx, void *userdata)
+{
     pa_context_state_t state;
     recorder_context_t *rctx = (recorder_context_t *) userdata;
     state = pa_context_get_state(ctx);
@@ -12,7 +19,8 @@ static void pa_state_cb(pa_context *ctx, void *userdata){
     switch (state){
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
-            fprintf(stderr, "State callback of pulseAudio return failure in its context");
+            if (!rctx->started)
+                fprintf(stderr, "State callback of pulseAudio return failure in its context.\n");
             rctx->pa_ready = 2;
             break;
         case PA_CONTEXT_READY:
@@ -27,7 +35,8 @@ static void pa_state_cb(pa_context *ctx, void *userdata){
     }
 }
 
-static void stream_request_cb(pa_stream *s, size_t length, void *userdata){
+static void stream_request_cb(pa_stream *s, size_t length, void *userdata)
+{
     const void *data;
     size_t nbytes = 0;
     recorder_context_t *rctx = (recorder_context_t *) userdata;
@@ -37,7 +46,8 @@ static void stream_request_cb(pa_stream *s, size_t length, void *userdata){
         pa_stream_drop(s);
 }
 
-static int init_pa(recorder_context_t *rctx){
+static int init_pa(recorder_context_t *rctx)
+{
     pa_mainloop_api *pa_mlapi;
     pa_proplist *ctx_properties = pa_proplist_new();
     pa_proplist *stream_properties = pa_proplist_new();
@@ -62,7 +72,7 @@ static int init_pa(recorder_context_t *rctx){
 
     retval = pa_stream_connect_record(rctx->recording_stream, NULL, NULL, 0);
     if (retval < 0){
-        printf("pa_stream_connect_playback failed\n");
+        fprintf(stderr, "pa_stream_connect_playback failed\n");
         goto exit;
     }
 
@@ -71,7 +81,8 @@ exit:
 }
 
 
-static int init_filename(recorder_context_t *rctx){
+static int init_filename(recorder_context_t *rctx)
+{
     int retval = 0;
 
     if ((rctx->recording_file = fopen(rctx->filename, "wb")) < 0){
@@ -83,7 +94,8 @@ static int init_filename(recorder_context_t *rctx){
     return retval;
 }
 
-recorder_context_t *init_recorder_context(char *filename){
+recorder_context_t *init_recorder_context(char *filename)
+{
     recorder_context_t *retval;
     retval = malloc(sizeof(recorder_context_t));
     retval->filename = filename;
@@ -91,23 +103,33 @@ recorder_context_t *init_recorder_context(char *filename){
     retval->pa_ss.rate = 44100;
     retval->pa_ss.channels = 2;
     retval->pa_ss.format = PA_SAMPLE_S16LE;
+    retval->mute = false;
+    retval->started = false;
 
     return retval;
 }
 
-int start_recording(recorder_context_t *rctx){
+int start_recording(recorder_context_t *rctx)
+{
     int retval = 0;
 
+    printf("Starting recorder.\n");
     if ((retval = init_filename(rctx))){
-        fprintf(stderr, "Failed in the initialization of the recording file");
+        fprintf(stderr, "Failed in the initialization of the recording file.\n");
         goto exit;
     }
 
     if ((retval = init_pa(rctx))){
-        fprintf(stderr, "Failed in the initializaion of pulse audio");
+        fprintf(stderr, "Failed in the initializaion of pulse audio\n.");
         goto exit;
     }
+    printf("PulseAudio connected.\n");
 
+    g_rctx = rctx;
+    signal(SIGINT, SIGINT_handler);
+
+    printf("Starting mainloop.\n");
+    rctx->started = true;
     pa_mainloop_run(rctx->pa_ml, &retval);
 
 exit:
@@ -115,16 +137,29 @@ exit:
     return retval;
 }
 
-int stop_recording(recorder_context_t *rctx){
+int stop_recording(recorder_context_t *rctx)
+{
     int retval = 0;
 
+    printf("Stopping recorder.\n");
     if (rctx->recording_file)
         fclose(rctx->recording_file);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);
     pa_mainloop_free(rctx->pa_ml);
     free(rctx);
+    printf("DONE.\n");
     return retval;
+}
+
+void SIGINT_handler(int sig)
+{
+    stop_recording(g_rctx);
+    fflush(stdout);
+
+    // Fallback to defaults...
+    signal(SIGINT, SIG_DFL);
+    kill(getpid(), SIGINT);
 }
 
 #ifdef DEBUG

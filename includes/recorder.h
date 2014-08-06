@@ -1,4 +1,8 @@
+#include <time.h>
+#include <stdbool.h>
 #include <pulse/pulseaudio.h>
+#define QUIET_TIME 3
+#define BREAKPOINT 1.15
 
 /*
  * Main structure of the recorder subsystem.
@@ -6,9 +10,14 @@
 struct recorder_context{
     char *filename;
     FILE *recording_file;
+
     int pa_ready;
     bool mute;
     bool started;
+    bool is_speaking;
+    time_t timestamp;
+    double threshold;
+
     pa_mainloop *pa_ml;
     pa_context *pa_ctx;
     pa_stream *recording_stream;
@@ -37,7 +46,7 @@ int stop_recording(recorder_context_t *rctx);
 /*
  * Changes the target of the recording to the new_filename
  */
-int change_recorder_filename(recorder_context_t *rctx, char *new_filename);
+int change_recording_file(recorder_context_t *rctx, char *new_filename);
 
 /*
  * Stop recording the utterances that the user spells to the system.

@@ -1,18 +1,12 @@
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <math.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include "recorder.h"
-
-void SIGINT_handler(int sig);
-// Is there any way to avoid using this global because of the SIGINT handler?
-static recorder_context_t *g_rctx;
+#ifndef RECORDER_H
+    #include "rec_handlers.h"
+#endif
 
 #ifdef DEBUG
 static FILE *threshold_file;
 #endif
+
+static int init_filename(recorder_context_t *);
 
 static void pa_state_cb(pa_context *ctx, void *userdata)
 {
@@ -65,14 +59,32 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
     const void *data;
     size_t size = 0;
     double power;
+    int retval, retries;
     recorder_context_t *rctx = (recorder_context_t *) userdata;
+
+    if (rctx->dirty_filename){
+        fclose(rctx->recording_file);
+
+        retries = 0;
+        do{
+            retval = init_filename(rctx);
+            retries++;
+        } while(retval != 0 && retries < 20);
+
+        if (retries == 20){
+            fprintf(stderr, "There was some nasty problems with the opening of %s file.", rctx->filename);
+            stop_recording(rctx);
+        }
+
+        rctx->dirty_filename = false;
+    }
 
     if (!rctx->mute){
         pa_stream_peek(stream, &data, &size);
         power = calculate_rms_power(data, size);
-        rctx->is_speaking = false;
+        rctx->is_recording = false;
         if (power >= rctx->threshold * BREAKPOINT){
-            rctx->is_speaking = true;
+            rctx->is_recording = true;
             fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
 #ifdef DEBUG
             printf("-> power: %f threshold: %f\n", power, rctx->threshold);
@@ -160,13 +172,14 @@ recorder_context_t *init_recorder_context(char *filename)
     recorder_context_t *retval;
     retval = malloc(sizeof(recorder_context_t));
     retval->filename = filename;
+    retval->dirty_filename = false;
     retval->pa_ready = 0;
     retval->pa_ss.rate = 44100;
     retval->pa_ss.channels = 1;
     retval->pa_ss.format = PA_SAMPLE_S16LE;
     retval->mute = false;
     retval->started = false;
-    retval->is_speaking = false;
+    retval->is_recording = false;
 
     return retval;
 }
@@ -186,9 +199,8 @@ int start_recording(recorder_context_t *rctx)
         fprintf(stderr, "Failed in the initializaion of pulse audio\n.");
         goto exit;
     }
-    g_rctx = rctx;
-    signal(SIGINT, SIGINT_handler);
     printf("PulseAudio connected.\n");
+    init_handlers(rctx);
 
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);
@@ -229,6 +241,7 @@ int stop_recording(recorder_context_t *rctx)
 #endif
     if (rctx->recording_file)
         fclose(rctx->recording_file);
+    pa_mainloop_quit(rctx->pa_ml, retval);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);
     pa_mainloop_free(rctx->pa_ml);
@@ -247,14 +260,10 @@ int change_recording_file(recorder_context_t *rctx, char *new_filename)
         fprintf(stderr, "[%s] The filename change is invalid.\n", ctime((const time_t *) &now));
         return -1;
     }else{
-        /* TODO: I must be polite here, use a timer to defer the closing of the file when nobody is speaking.*/
-        if (fclose(rctx->recording_file) == EOF){
-            fprintf(stderr, "[%s] The filename change cannot be made.\n", ctime((const time_t *) &now));
-            return -2;
-        }
         rctx->filename = new_filename;
+        rctx->dirty_filename = true;
         fclose(file);
-        return init_filename(rctx);
+        return 0;
     }
 }
 
@@ -274,16 +283,6 @@ int toggle_recorder(recorder_context_t *rctx)
 {
     rctx->mute = !rctx->mute;
     return 0;
-}
-
-void SIGINT_handler(int sig)
-{
-    stop_recording(g_rctx);
-    fflush(stdout);
-
-    // Fallback to defaults...
-    signal(SIGINT, SIG_DFL);
-    kill(getpid(), SIGINT);
 }
 
 #ifdef DEBUG

@@ -1,8 +1,17 @@
-#include <time.h>
-#include <stdbool.h>
-#include <pulse/pulseaudio.h>
-#define QUIET_TIME 3
-#define BREAKPOINT 1.15
+#ifndef RECORDER_H
+    #define RECORDER_H
+    #include <stdio.h>
+    #include <errno.h>
+    #include <string.h>
+    #include <math.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+    #include <time.h>
+    #include <stdbool.h>
+    #include <pulse/pulseaudio.h>
+    #define QUIET_TIME 3
+    #define BREAKPOINT 0.9
+#endif
 
 /*
  * Main structure of the recorder subsystem.
@@ -14,7 +23,8 @@ struct recorder_context{
     int pa_ready;
     bool mute;
     bool started;
-    bool is_speaking;
+    bool is_recording;
+    bool dirty_filename;
     time_t timestamp;
     double threshold;
 

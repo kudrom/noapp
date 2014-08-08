@@ -21,6 +21,10 @@
 *.hex
 
 *.swp
+*~
+
+configure.scan
+*.log
 
 build/
 

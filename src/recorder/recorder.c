@@ -285,7 +285,6 @@ int toggle_recorder(recorder_context_t *rctx)
     return 0;
 }
 
-#ifdef DEBUG
 int main(int argc, char*argv[])
 {
     char *filename = argc == 1 ? "/tmp/noapp_recording.pcm" : argv[1];
@@ -293,4 +292,3 @@ int main(int argc, char*argv[])
     rctx = init_recorder_context(filename);
     return start_recording(rctx);
 }
-#endif

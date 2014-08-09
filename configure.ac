@@ -51,6 +51,4 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 PKG_CHECK_MODULES(POCKETSPHINX, pocketsphinx)
 PKG_CHECK_MODULES(SPHINXBASE, sphinxbase)
-MODELDIR=`pkg-config --variable=modeldir pocketsphinx`
-AC_SUBST(MODELDIR)
 AC_OUTPUT

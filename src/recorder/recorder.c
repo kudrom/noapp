@@ -174,7 +174,7 @@ recorder_context_t *init_recorder_context(char *filename)
     retval->filename = filename;
     retval->dirty_filename = false;
     retval->pa_ready = 0;
-    retval->pa_ss.rate = 44100;
+    retval->pa_ss.rate = 16000;
     retval->pa_ss.channels = 1;
     retval->pa_ss.format = PA_SAMPLE_S16LE;
     retval->mute = false;

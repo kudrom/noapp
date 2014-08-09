@@ -1,5 +1,5 @@
-#ifndef RECORDER_H
-    #include "rec_handlers.h"
+#ifndef REC_HANDLES_H
+    #include "rec_handles.h"
 #endif
 
 #ifdef DEBUG
@@ -200,7 +200,7 @@ int start_recording(recorder_context_t *rctx)
         goto exit;
     }
     printf("PulseAudio connected.\n");
-    init_handlers(rctx);
+    init_handles(rctx);
 
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);

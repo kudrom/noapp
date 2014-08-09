@@ -6,5 +6,7 @@ lmdir = $(pkgdatadir)/lm/turtle
 lmd = $(srcdir)/data/lm
 lm_DATA = $(lmd)/turtle/turtle.dic $(lmd)/turtle/turtle.DMP
 
-include_HEADERS = include/rec_handlers.h include/recorder.h
+if !DEBUG
+include_HEADERS = include/rec_handles.h include/recorder.h
+endif
 SUBDIRS = . src

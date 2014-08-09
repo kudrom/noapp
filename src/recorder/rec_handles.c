@@ -1,5 +1,5 @@
-#ifndef RECORDER_H
-    #include "rec_handlers.h"
+#ifndef REC_HANDLES_H
+    #include "rec_handles.h"
 #endif
 
 static recorder_context_t *g_rctx;
@@ -15,7 +15,7 @@ static void shutdown(int sig)
     kill(getpid(), sig);
 }
 
-int init_handlers(recorder_context_t *rctx){
+int init_handles(recorder_context_t *rctx){
     g_rctx = rctx;
 
     signal(SIGINT, shutdown);

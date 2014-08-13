@@ -1,4 +1,6 @@
-#include <pocketsphinx.h>
+#ifndef RECOGNIZER_H
+    #include "recognizer.h"
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -11,7 +13,7 @@ int main(int argc, char *argv[])
     int32 score;
 
     if ((fh = fopen(filename, "rb")) == NULL){
-        perror("Failed to open goforward.raw");
+        log(LOG_ERR, "Failed to open goforward.raw");
         return 1;
     }
 
@@ -24,18 +26,21 @@ int main(int argc, char *argv[])
     }
 
     if ((ps = ps_init(config)) == NULL){
+        log(LOG_ERR, "Cannot initialize the ps_decoder.");
         return 1;
     }
 
     if ((retvalue = ps_decode_raw(ps, fh, "goforward", -1)) < 0){
+        log(LOG_ERR, "Cannot decode the raw.");
         return 1;
     }
 
     if ((hyp = ps_get_hyp(ps, &score, &uttid)) == NULL){
+        log(LOG_ERR, "Cannot get a hypothesis");
         return 1;
     }
 
-    printf("\nRecognized: %s\n", hyp);
+    fprintf(stdin, "\nRecognized: %s\n", hyp);
 
     fclose(fh);
     ps_free(ps);

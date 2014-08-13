@@ -18,7 +18,7 @@ static void pa_state_cb(pa_context *ctx, void *userdata)
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
             if (!rctx->started)
-                fprintf(stderr, "State callback of pulseAudio return failure in its context.\n");
+                log(LOG_ERR, "State callback of pulseAudio return failure in its context.");
             rctx->pa_ready = 2;
             break;
         case PA_CONTEXT_READY:
@@ -72,7 +72,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
         } while(retval != 0 && retries < 20);
 
         if (retries == 20){
-            fprintf(stderr, "There was some nasty problems with the opening of %s file.", rctx->filename);
+            log(LOG_ERR, "There was some nasty problems with the opening of %s file.", rctx->filename);
             stop_recording(rctx);
         }
 
@@ -87,9 +87,9 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
             rctx->is_recording = true;
             fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
 #ifdef DEBUG
-            printf("-> power: %f threshold: %f\n", power, rctx->threshold);
+            log(LOG_DEBUG, "-> power: %f threshold: %f\n", power, rctx->threshold);
         }else{
-            printf("   power: %f threshold: %f\n", power, rctx->threshold);
+            log(LOG_DEBUG, "   power: %f threshold: %f\n", power, rctx->threshold);
 #endif
         }
         if (data)
@@ -146,7 +146,7 @@ static int init_pa(recorder_context_t *rctx)
 
     retval = pa_stream_connect_record(rctx->recording_stream, NULL, NULL, 0);
     if (retval < 0){
-        fprintf(stderr, "pa_stream_connect_playback failed\n");
+        log(LOG_ERR, "pa_stream_connect_playback failed\n");
         goto exit;
     }
 
@@ -159,8 +159,8 @@ static int init_filename(recorder_context_t *rctx)
     int retval = 0;
 
     if ((rctx->recording_file = fopen(rctx->filename, "wb")) == NULL){
-        fprintf(stderr, "Failed to open the file for recording.\n");
-        fprintf(stderr, "\terrno: %s\n", strerror(errno));
+        log(LOG_ERR, "Failed to open the file for recording.\n");
+        log(LOG_ERR, "\terrno: %s\n", strerror(errno));
         retval = -1;
     }
 
@@ -189,17 +189,17 @@ int start_recording(recorder_context_t *rctx)
     int retval = 0;
     time_t current_time;
 
-    printf("Starting recorder.\n");
+    log(LOG_INFO, "Starting recorder.\n");
     if ((retval = init_filename(rctx))){
-        fprintf(stderr, "Failed in the initialization of the recording file.\n");
+        log(LOG_ERR, "Failed in the initialization of the recording file.\n");
         goto exit;
     }
 
     if ((retval = init_pa(rctx))){
-        fprintf(stderr, "Failed in the initializaion of pulse audio\n.");
+        log(LOG_ERR, "Failed in the initializaion of pulse audio\n.");
         goto exit;
     }
-    printf("PulseAudio connected.\n");
+    log(LOG_INFO, "PulseAudio connected.\n");
     init_handles(rctx);
 
     printf("*****  ATTENTION  *****\n");
@@ -214,11 +214,13 @@ int start_recording(recorder_context_t *rctx)
         pa_mainloop_iterate(rctx->pa_ml, 0, &retval);
         current_time = time(NULL);
         if (retval < 0){
-            fprintf(stderr, "There was a problem calculating the threshold power.\n");
+            log(LOG_ERR, "There was a problem calculating the threshold power.\n");
             goto exit;
         }
     }
-    printf("Threshold: %f\n", rctx->threshold);
+#ifdef DEBUG
+    log(LOG_DEBUG, "Threshold: %f\n", rctx->threshold);
+#endif
 
     printf("\nNow you can start talking.\n");
     rctx->started = true;
@@ -235,7 +237,7 @@ int stop_recording(recorder_context_t *rctx)
 {
     int retval = 0;
 
-    printf("Stopping recorder.\n");
+    log(LOG_INFO, "Stopping recorder.\n");
 #ifdef DEBUG
     fclose(threshold_file);
 #endif
@@ -246,18 +248,16 @@ int stop_recording(recorder_context_t *rctx)
     pa_context_unref(rctx->pa_ctx);
     pa_mainloop_free(rctx->pa_ml);
     free(rctx);
-    printf("DONE.\n");
+    log(LOG_INFO, "DONE.\n");
     return retval;
 }
 
 int change_recording_file(recorder_context_t *rctx, char *new_filename)
 {
     FILE *file;
-    time_t now;
 
-    now = time(NULL);
     if ((file = fopen(new_filename, "wb")) == NULL){
-        fprintf(stderr, "[%s] The filename change is invalid.\n", ctime((const time_t *) &now));
+        log(LOG_ERR, "The filename change is invalid.\n");
         return -1;
     }else{
         rctx->filename = new_filename;

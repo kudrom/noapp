@@ -3,6 +3,7 @@
     #include <fcntl.h>
     #include <stdlib.h>
     #include <sys/stat.h>
+    #include "log.h"
     #include "recorder.h"
     #include "recognizer.h"
 #endif

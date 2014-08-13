@@ -7,9 +7,9 @@
     #include <stdbool.h>
     #include <string.h>
     #include <sys/types.h>
-    #include <syslog.h>
     #include <time.h>
     #include <unistd.h>
+    #include "log.h"
     #define QUIET_TIME 3
     #define BREAKPOINT 0.9
 #endif

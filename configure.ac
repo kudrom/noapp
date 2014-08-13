@@ -50,4 +50,5 @@ AM_CONDITIONAL([DEBUG], [test x$debug = xtrue])
 
 PKG_CHECK_MODULES(POCKETSPHINX, pocketsphinx)
 PKG_CHECK_MODULES(SPHINXBASE, sphinxbase)
+PKG_CHECK_MODULES(JOURNAL, libsystemd-journal)
 AC_OUTPUT

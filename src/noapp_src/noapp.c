@@ -31,16 +31,16 @@ static int setup_fifo(char *filename)
     if ((retval = mkfifo(filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0){
         switch (errno){
             case EEXIST:
-                printf("The named file %s already exists.\n", filename);
+                log(LOG_ERR, "The named file %s already exists.\n", filename);
                 break;
             case ENOSPC:
-                printf("The directory or file system cannot be extended for %s.\n", filename);
+                log(LOG_ERR, "The directory or file system cannot be extended for %s.\n", filename);
                 break;
             case EROFS:
-                printf("The directory for %s is read-only.\n", filename);
+                log(LOG_ERR, "The directory for %s is read-only.\n", filename);
                 break;
             default:
-                printf("Some nasty error happended around mkfifo for %s.\n", filename);
+                log(LOG_ERR, "Some nasty error happended around mkfifo for %s.\n", filename);
                 break;
         }
         retval = -1;
@@ -58,7 +58,7 @@ static int load_config(noapp_config_t *config)
 {
     config->recorder = "/home/kudrom/src/noapp/build/bin/recorder";
     if (setup_fifo("/tmp/reco_fifo") != 0){
-        printf("Failed when creating fifo for recorder-recognizer.\n");
+        log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
         return -1;
     }
     config->reco_fifo = "/tmp/reco_fifo";
@@ -72,25 +72,24 @@ int main(int argc, char *argv[])
     noapp_config_t config;
 
     if (load_config(&config) != 0){
-        printf("Failed when loading noapp's config.\n");
+        log(LOG_ERR, "Failed when loading noapp's config.\n");
         return -1;
     }
 
     recorder_pid = fork();
     if (recorder_pid < 0){
-        printf("Failed when forking for recorder.\n");
+        log(LOG_ERR, "Failed when forking for recorder.\n");
         return -1;
     }else if(recorder_pid == 0){
-        sleep(5);
         if (daemonize() != 0){
-            printf("Failed when daemonicing recorder.\n");
+            log(LOG_ERR, "Failed when daemonicing recorder.\n");
             return -1;
         }
         start_recorder(&config);
     }
 
 #ifdef DEBUG
-    printf("recorder_pid: %d\n", recorder_pid);
+    log(LOG_DEBUG, "recorder_pid: %d\n", recorder_pid);
 #endif
 
     return 0;

@@ -1,14 +1,15 @@
 #ifndef RECORDER_H
     #define RECORDER_H
-    #include <stdio.h>
     #include <errno.h>
-    #include <string.h>
     #include <math.h>
-    #include <sys/types.h>
-    #include <unistd.h>
-    #include <time.h>
-    #include <stdbool.h>
     #include <pulse/pulseaudio.h>
+    #include <stdio.h>
+    #include <stdbool.h>
+    #include <string.h>
+    #include <sys/types.h>
+    #include <syslog.h>
+    #include <time.h>
+    #include <unistd.h>
     #define QUIET_TIME 3
     #define BREAKPOINT 0.9
 #endif

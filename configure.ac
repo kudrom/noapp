@@ -36,8 +36,7 @@ AC_FUNC_MALLOC
 AC_CHECK_FUNCS([sqrt strerror])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile
-                 src/recorder/Makefile])
+                 src/Makefile])
 
 AC_ARG_ENABLE([debug],
               [  --enable-debug    Turn on debugging],

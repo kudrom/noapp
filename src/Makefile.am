@@ -1,20 +1,23 @@
 AUTOMAKE_OPTIONS = subdir-objects
 AM_CFLAGS = -I$(includedir) -Wall
 
-bin_PROGRAMS = noapp_cmd
-noapp_cmd_SOURCES = noapp/noapp_cmd.c
-noapp_cmd_LDADD = $(POCKETSPHINX_LIBS) $(SPHINXBASE_LIBS)
-noapp_cmd_CFLAGS = $(AM_CFLAGS) $(POCKETSPHINX_CFLAGS) $(SPHINXBASE_CFLAGS) -DMODELDIR=\"$(pkgdatadir)\"
-
-bin_PROGRAMS += recorder_d
-recorder_d_SOURCES = recorder/recorder.c recorder/rec_handles.c
-recorder_d_LDADD = -lpulse -lm
-recorder_d_CFLAGS = $(AM_CFLAGS)
+bin_PROGRAMS = noapp
+noapp_SOURCES = noapp_src/noapp.c
+noapp_LDADD = $(POCKETSPHINX_LIBS) $(SPHINXBASE_LIBS)
+noapp_CFLAGS = $(AM_CFLAGS) $(POCKETSPHINX_CFLAGS) $(SPHINXBASE_CFLAGS) -DMODELDIR=\"$(pkgdatadir)\"
 if DEBUG
-recorder_d_CFLAGS += -DDEBUG
+noapp_CFLAGS += -DDEBUG
 endif
 
-bin_PROGRAMS += recognizer_d
-recognizer_d_SOURCES = recognizer/recognizer.c
-recognizer_d_LDADD = $(POCKETSPHINX_LIBS) $(SPHINXBASE_LIBS)
-recognizer_d_CFLAGS = $(AM_CFLAGS) $(POCKETSPHINX_CFLAGS) $(SPHINXBASE_CFLAGS) -DMODELDIR=\"$(pkgdatadir)\"
+bin_PROGRAMS += recorder
+recorder_SOURCES = recorder_src/recorder.c recorder_src/rec_handles.c
+recorder_LDADD = -lpulse -lm
+recorder_CFLAGS = $(AM_CFLAGS)
+if DEBUG
+recorder_CFLAGS += -DDEBUG
+endif
+
+bin_PROGRAMS += recognizer
+recognizer_SOURCES = recognizer_src/recognizer.c
+recognizer_LDADD = $(POCKETSPHINX_LIBS) $(SPHINXBASE_LIBS)
+recognizer_CFLAGS = $(AM_CFLAGS) $(POCKETSPHINX_CFLAGS) $(SPHINXBASE_CFLAGS) -DMODELDIR=\"$(pkgdatadir)\"

@@ -3,6 +3,7 @@
 NOAPP=$HOME/src/noapp
 cd $NOAPP
 mkdir build 2> /dev/null
+cp -r include build/
 autoreconf
 
 cd build

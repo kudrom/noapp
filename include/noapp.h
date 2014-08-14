@@ -9,8 +9,8 @@
 #endif
 
 struct noapp_config{
-    char *recorder;
-    char *recognizer;
-    char *reco_fifo;
+    const char *recorder;
+    const char *recognizer;
+    const char *reco_fifo;
 };
 typedef struct noapp_config noapp_config_t;

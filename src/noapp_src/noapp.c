@@ -49,14 +49,22 @@ static int setup_fifo(char *filename)
     return retval;
 }
 
-static void start_recorder(noapp_config_t *config)
+static int start_recorder(noapp_config_t *config)
 {
-    execl(config->recorder, config->recorder, config->reco_fifo);
+    execl(config->recorder, "noapp's recorder", config->reco_fifo, NULL);
+    return errno;
+}
+
+static int start_recognizer(noapp_config_t *config)
+{
+    execl(config->recognizer, "noapp's recognizer", config->reco_fifo, NULL);
+    return errno;
 }
 
 static int load_config(noapp_config_t *config)
 {
     config->recorder = "/home/kudrom/src/noapp/build/bin/recorder";
+    config->recognizer = "/home/kudrom/src/noapp/build/bin/recognizer";
     if (setup_fifo("/tmp/reco_fifo") != 0){
         log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
         return -1;
@@ -70,27 +78,51 @@ int main(int argc, char *argv[])
 {
     pid_t recorder_pid, recognizer_pid;
     noapp_config_t config;
+    int retval = 0;
 
     if (load_config(&config) != 0){
         log(LOG_ERR, "Failed when loading noapp's config.\n");
-        return -1;
+        retval = -1;
+        goto exit;
     }
 
     recorder_pid = fork();
     if (recorder_pid < 0){
         log(LOG_ERR, "Failed when forking for recorder.\n");
-        return -1;
+        retval = -1;
+        goto exit;
     }else if(recorder_pid == 0){
         if (daemonize() != 0){
-            log(LOG_ERR, "Failed when daemonicing recorder.\n");
-            return -1;
+            log(LOG_ERR, "Failed when daemonizing recorder.\n");
+            retval = -1;
+        }else{
+            retval = start_recorder(&config);
+            log(LOG_ERR, "execl failed in recorder with errno %s.", strerror(retval));
         }
-        start_recorder(&config);
+        goto exit;
+    }
+
+    recognizer_pid = fork();
+    if (recognizer_pid < 0){
+        log(LOG_ERR, "Failed when forking for recognizer.\n");
+        retval = -1;
+        goto exit;
+    }else if(recognizer_pid == 0){
+        if (daemonize() != 0){
+            log(LOG_ERR, "Failed when daemonizing recognizer.\n");
+            retval = -1;
+        }else{
+            retval = start_recognizer(&config);
+            log(LOG_ERR, "execl failed in recognizer with errno %s.", strerror(retval));
+        }
+        goto exit;
     }
 
 #ifdef DEBUG
     log(LOG_DEBUG, "recorder_pid: %d\n", recorder_pid);
+    log(LOG_DEBUG, "recognizer_pid: %d\n", recognizer_pid);
 #endif
 
-    return 0;
+exit:
+    return retval;
 }

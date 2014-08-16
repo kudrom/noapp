@@ -16,9 +16,20 @@ char *generate_length_filename(char *base_filename)
     return length_filename;
 }
 
-int open_file(FILE *fh)
+FILE *open_file(char *filename, char *mode)
 {
-    int retval = 0;
+    FILE *fh;
+    int err;
 
-    return retval;
+    fh = fopen(filename, mode);
+    if ((err = ferror(fh)) != 0){
+        Log(LOG_ERR, "Failed to open %s with error %d.\n", filename, err);
+        return NULL;
+    }
+    if (feof(fh) != 0){
+        Log(LOG_ERR, "Failed to open %s because eof has been reached.\n", filename);
+        return NULL;
+    }
+
+    return fh;
 }

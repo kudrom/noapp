@@ -210,17 +210,22 @@ static int init_filename(recorder_context_t *rctx)
 {
     int retval = 0;
     char *length_filename;
+    FILE *fh;
+
+    fh = open_file(rctx->filename, "wb");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for recording.\n");
+        return -1;
+    }
+    rctx->recording_file = fh;
 
     length_filename = generate_length_filename(rctx->filename);
-
-    if ((rctx->recording_file = fopen(rctx->filename, "wb")) == NULL){
-        Log(LOG_ERR, "Failed to open the file for recording with errno %s.\n", strerror(errno));
-        retval = -1;
-    }else if ((rctx->length_file = fopen(length_filename, "w")) == NULL){
-        Log(LOG_ERR, "Failed to open the file for length_recording.\n");
-        Log(LOG_ERR, "\terrno: %s\n", strerror(errno));
-        retval = -1;
+    fh = open_file(length_filename, "w");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for the recording's length.\n");
+        return -1;
     }
+    rctx->length_file = fh;
 
     free(length_filename);
 

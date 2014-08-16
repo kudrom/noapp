@@ -1,4 +1,5 @@
 #include "recognizer.h"
+#include "utils.h"
 
 static int init_sphinx(recognizer_context_t *rctx){
     cmd_ln_t *config;
@@ -23,15 +24,10 @@ static int init_sphinx(recognizer_context_t *rctx){
 
 static int init_filenames(recognizer_context_t *rctx){
     FILE *fh;
-    int err;
 
-    fh = fopen(rctx->in_filename, "rb");
-    if ((err = ferror(fh)) != 0){
-        Log(LOG_ERR, "Failed to open the in file with error %d.\n", err);
-        return -1;
-    }
-    if (feof(fh) != 0){
-        Log(LOG_ERR, "Failed to open the in file because the eof has been reached.\n");
+    fh = open_file(rctx->in_filename, "rb");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the in filename of recognizer.\n");
         return -1;
     }
     rctx->in = fh;

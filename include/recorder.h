@@ -10,8 +10,15 @@
     #include <time.h>
     #include <unistd.h>
     #include "log.h"
+
     #define QUIET_TIME 3
-    #define BREAKPOINT 0.9
+
+    #define HIGH_BREAKPOINT 1.2
+    #define LOW_BREAKPOINT 0.8
+    #define SILENCE_BREAKPOINT 3
+    #define IDLE_BREAKPOINT 6
+    #define HOT_ZONE 2
+    #define INTERESTING_RATIO 0.3
 #endif
 
 /*
@@ -19,13 +26,22 @@
  */
 struct recorder_context{
     char *filename;
+    bool dirty_filename;
     FILE *recording_file;
+
+    FILE *length_file;
+    unsigned int data_length;
+
+    int counter_silence;
+    int counter_idle;
+
+    int high_activity;
+    int total_activity;
 
     int pa_ready;
     bool mute;
-    bool started;
     bool is_recording;
-    bool dirty_filename;
+
     time_t timestamp;
     double threshold;
 
@@ -36,7 +52,6 @@ struct recorder_context{
 };
 typedef struct recorder_context recorder_context_t;
 
-// TODO: Add a parameter to the next stage?
 /*
  * To use the NoApp recorder first you must initialize a correct recording_context
  * and then you can start recording with a call to start_recording(rctx);
@@ -74,9 +89,3 @@ int unmute_recorder(recorder_context_t *rctx);
  * Mutes/Unmutes the recorder.
  */
 int toggle_recorder(recorder_context_t *rctx);
-
-
-
-
-int bypass_next_stage();
-

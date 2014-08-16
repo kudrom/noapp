@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-    char *filename = argc == 1 ? "/tmp/noapp_recording.pcm" : argv[1];
+    char *filename = argc == 1 ? "/tmp/noapp_recording.raw" : argv[1];
     FILE *fh;
     cmd_ln_t *config;
     ps_decoder_t *ps;
@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     int32 score;
 
     if ((fh = fopen(filename, "rb")) == NULL){
-        log(LOG_ERR, "Failed to open goforward.raw");
+        Log(LOG_ERR, "Failed to open goforward.raw");
         return 1;
     }
 
@@ -26,17 +26,17 @@ int main(int argc, char *argv[])
     }
 
     if ((ps = ps_init(config)) == NULL){
-        log(LOG_ERR, "Cannot initialize the ps_decoder.");
+        Log(LOG_ERR, "Cannot initialize the ps_decoder.");
         return 1;
     }
 
     if ((retvalue = ps_decode_raw(ps, fh, "goforward", -1)) < 0){
-        log(LOG_ERR, "Cannot decode the raw.");
+        Log(LOG_ERR, "Cannot decode the raw.");
         return 1;
     }
 
     if ((hyp = ps_get_hyp(ps, &score, &uttid)) == NULL){
-        log(LOG_ERR, "Cannot get a hypothesis");
+        Log(LOG_ERR, "Cannot get a hypothesis");
         return 1;
     }
 

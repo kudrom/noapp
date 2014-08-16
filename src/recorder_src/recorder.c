@@ -17,8 +17,8 @@ static void pa_state_cb(pa_context *ctx, void *userdata)
     switch (state){
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
-            if (!rctx->started)
-                log(LOG_ERR, "State callback of pulseAudio return failure in its context.");
+            if (rctx->pa_ready == 1)
+                Log(LOG_ERR, "State callback of pulseAudio return failure in its context.");
             rctx->pa_ready = 2;
             break;
         case PA_CONTEXT_READY:
@@ -54,12 +54,23 @@ static double calculate_rms_power(const uint8_t *data, size_t size)
     return sqrt(sum / size);
 }
 
+/*
+ * The callback will record when mute isn't activated and:
+ *    - it'll allways record the first SILENCE_BREAKPOINTs events that are above the low_point but below the 
+ *    high_point (these are normally the trailing of a utterance).
+ *    - it'll allways record if the event is well below the high_level (these are normally the utterances)
+ * The counter_activity (which is one of the responsibles to record after all, see the above comment) is reseted
+ * mainly by a detected high_point utterance or when we have detected a long streak of idle.
+ *
+ * The callback will split an utterance when nothing interesting has been said in the last HOT_ZONE seconds.
+ */
 static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 {
     const void *data;
     size_t size = 0;
-    double power;
+    double power, low_point, high_point;
     int retval, retries;
+    time_t current_time;
     recorder_context_t *rctx = (recorder_context_t *) userdata;
 
     if (rctx->dirty_filename){
@@ -70,9 +81,8 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
             retval = init_filename(rctx);
             retries++;
         } while(retval != 0 && retries < 20);
-
         if (retries == 20){
-            log(LOG_ERR, "There was some nasty problems with the opening of %s file.", rctx->filename);
+            Log(LOG_ERR, "There was some nasty problems with the opening of %s file.", rctx->filename);
             stop_recording(rctx);
         }
 
@@ -81,19 +91,60 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 
     if (!rctx->mute){
         pa_stream_peek(stream, &data, &size);
-        power = calculate_rms_power(data, size);
         rctx->is_recording = false;
-        if (power >= rctx->threshold * BREAKPOINT){
-            rctx->is_recording = true;
-            fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
+
+        power = calculate_rms_power(data, size);
+        low_point = rctx->threshold * LOW_BREAKPOINT;
+        high_point = rctx->threshold * HIGH_BREAKPOINT;
+        rctx->total_activity++;
+        if (data){
+            if (power >= low_point){
+                if (rctx->counter_silence < SILENCE_BREAKPOINT || power > high_point){
+                    rctx->counter_idle = 0;
+                    current_time = time(NULL);
+                    if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
+                        if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO) && (rctx->data_length > 0)){
+                            fprintf(rctx->length_file, "%u\n", rctx->data_length);
+                            rctx->data_length = 0;
 #ifdef DEBUG
-            log(LOG_DEBUG, "-> power: %f threshold: %f\n", power, rctx->threshold);
-        }else{
-            log(LOG_DEBUG, "   power: %f threshold: %f\n", power, rctx->threshold);
+                            Log(LOG_DEBUG, "utterance cutted.\n");
 #endif
-        }
-        if (data)
+                        }
+                        rctx->high_activity = rctx->total_activity = 0;
+                        rctx->timestamp = current_time;
+                    }
+
+                    if (power <= high_point){
+                        rctx->counter_silence++;
+                    }else{
+                        rctx->counter_silence = 0;
+                        rctx->high_activity++;
+                    }
+
+                    rctx->is_recording = true;
+                    fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
+                    rctx->data_length += (unsigned int) length;
+                    //printf("data_length: %d\n", rctx->data_length);
+
+#ifdef DEBUG
+                    Log(LOG_DEBUG, "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                            power, low_point, high_point,rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+                }else{
+                    Log(LOG_DEBUG, "SS power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                            power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+                }
+#endif
+            }else{
+                rctx->counter_idle = fmin(++rctx->counter_idle, IDLE_BREAKPOINT);
+                if (rctx->counter_idle == IDLE_BREAKPOINT)
+                    rctx->counter_silence = 0;
+#ifdef DEBUG
+                Log(LOG_DEBUG, "   power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+#endif
+            }
             pa_stream_drop(stream);
+        }
     }
 }
 
@@ -146,7 +197,7 @@ static int init_pa(recorder_context_t *rctx)
 
     retval = pa_stream_connect_record(rctx->recording_stream, NULL, NULL, 0);
     if (retval < 0){
-        log(LOG_ERR, "pa_stream_connect_playback failed\n");
+        Log(LOG_ERR, "pa_stream_connect_playback failed\n");
         goto exit;
     }
 
@@ -157,10 +208,20 @@ exit:
 static int init_filename(recorder_context_t *rctx)
 {
     int retval = 0;
+    size_t size;
+    char *length_filename;
+    size = strlen(rctx->filename) + 7;
+    length_filename = (char *) malloc(size);
+    strncpy(length_filename, rctx->filename, strlen(rctx->filename));
+    strncat(length_filename, ".length", 7+1);
 
     if ((rctx->recording_file = fopen(rctx->filename, "wb")) == NULL){
-        log(LOG_ERR, "Failed to open the file for recording.\n");
-        log(LOG_ERR, "\terrno: %s\n", strerror(errno));
+        Log(LOG_ERR, "Failed to open the file for recording.\n");
+        Log(LOG_ERR, "\terrno: %s\n", strerror(errno));
+        retval = -1;
+    }else if ((rctx->length_file = fopen(length_filename, "w")) == NULL){
+        Log(LOG_ERR, "Failed to open the file for length_recording.\n");
+        Log(LOG_ERR, "\terrno: %s\n", strerror(errno));
         retval = -1;
     }
 
@@ -178,8 +239,12 @@ recorder_context_t *init_recorder_context(char *filename)
     retval->pa_ss.channels = 1;
     retval->pa_ss.format = PA_SAMPLE_S16LE;
     retval->mute = false;
-    retval->started = false;
     retval->is_recording = false;
+    retval->data_length = 0;
+    retval->counter_silence = 0;
+    retval->counter_idle = 0;
+    retval->high_activity = 0;
+    retval->total_activity = 0;
 
     return retval;
 }
@@ -189,17 +254,17 @@ int start_recording(recorder_context_t *rctx)
     int retval = 0;
     time_t current_time;
 
-    log(LOG_INFO, "Starting recorder.\n");
+    Log(LOG_INFO, "Starting recorder.\n");
     if ((retval = init_filename(rctx))){
-        log(LOG_ERR, "Failed in the initialization of the recording file.\n");
+        Log(LOG_ERR, "Failed in the initialization of the recording file.\n");
         goto exit;
     }
 
     if ((retval = init_pa(rctx))){
-        log(LOG_ERR, "Failed in the initializaion of pulse audio\n.");
+        Log(LOG_ERR, "Failed in the initializaion of pulse audio\n.");
         goto exit;
     }
-    log(LOG_INFO, "PulseAudio connected.\n");
+    Log(LOG_INFO, "PulseAudio connected.\n");
     init_handles(rctx);
 
     printf("*****  ATTENTION  *****\n");
@@ -214,16 +279,15 @@ int start_recording(recorder_context_t *rctx)
         pa_mainloop_iterate(rctx->pa_ml, 0, &retval);
         current_time = time(NULL);
         if (retval < 0){
-            log(LOG_ERR, "There was a problem calculating the threshold power.\n");
+            Log(LOG_ERR, "There was a problem calculating the threshold power.\n");
             goto exit;
         }
     }
 #ifdef DEBUG
-    log(LOG_DEBUG, "Threshold: %f\n", rctx->threshold);
+    Log(LOG_DEBUG, "Threshold: %f\n", rctx->threshold);
 #endif
 
     printf("\nNow you can start talking.\n");
-    rctx->started = true;
     rctx->timestamp = time(NULL);
     pa_stream_set_read_callback(rctx->recording_stream, stream_request_cb, rctx);
     pa_mainloop_run(rctx->pa_ml, &retval);
@@ -237,18 +301,20 @@ int stop_recording(recorder_context_t *rctx)
 {
     int retval = 0;
 
-    log(LOG_INFO, "Stopping recorder.\n");
+    Log(LOG_INFO, "Stopping recorder.\n");
 #ifdef DEBUG
     fclose(threshold_file);
 #endif
     if (rctx->recording_file)
         fclose(rctx->recording_file);
+    if (rctx->length_file)
+        fclose(rctx->length_file);
     pa_mainloop_quit(rctx->pa_ml, retval);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);
     pa_mainloop_free(rctx->pa_ml);
     free(rctx);
-    log(LOG_INFO, "DONE.\n");
+    Log(LOG_INFO, "DONE.\n");
     return retval;
 }
 
@@ -257,7 +323,7 @@ int change_recording_file(recorder_context_t *rctx, char *new_filename)
     FILE *file;
 
     if ((file = fopen(new_filename, "wb")) == NULL){
-        log(LOG_ERR, "The filename change is invalid.\n");
+        Log(LOG_ERR, "The filename change is invalid.\n");
         return -1;
     }else{
         rctx->filename = new_filename;
@@ -287,7 +353,7 @@ int toggle_recorder(recorder_context_t *rctx)
 
 int main(int argc, char*argv[])
 {
-    char *filename = argc == 1 ? "/tmp/noapp_recording.pcm" : argv[1];
+    char *filename = argc == 1 ? "/tmp/noapp_recording.raw" : argv[1];
     recorder_context_t *rctx;
     rctx = init_recorder_context(filename);
     return start_recording(rctx);

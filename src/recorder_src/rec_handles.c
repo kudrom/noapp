@@ -1,6 +1,4 @@
-#ifndef REC_HANDLES_H
-    #include "rec_handles.h"
-#endif
+#include "rec_handles.h"
 
 static recorder_context_t *g_rctx;
 

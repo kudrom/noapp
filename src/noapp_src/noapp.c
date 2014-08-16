@@ -1,6 +1,4 @@
-#ifndef NOAPP_H
-    #include <noapp.h>
-#endif
+#include <noapp.h>
 
 /*
  * Taken from  http://www.netzmafia.de/skripten/unix/linux-daemon-howto.html

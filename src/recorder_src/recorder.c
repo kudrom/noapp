@@ -1,6 +1,6 @@
-#ifndef REC_HANDLES_H
-    #include "rec_handles.h"
-#endif
+#include "recorder.h"
+#include "rec_handles.h"
+#include "utils.h"
 
 #ifdef DEBUG
 static FILE *threshold_file;
@@ -209,24 +209,20 @@ exit:
 static int init_filename(recorder_context_t *rctx)
 {
     int retval = 0;
-    size_t size;
     char *length_filename;
 
-    // TODO: This to a separate file.
-    size = strlen(rctx->filename) + 7;
-    length_filename = (char *) malloc(size);
-    strncpy(length_filename, rctx->filename, strlen(rctx->filename));
-    strncat(length_filename, ".length", 7+1);
+    length_filename = generate_length_filename(rctx->filename);
 
     if ((rctx->recording_file = fopen(rctx->filename, "wb")) == NULL){
-        Log(LOG_ERR, "Failed to open the file for recording.\n");
-        Log(LOG_ERR, "\terrno: %s\n", strerror(errno));
+        Log(LOG_ERR, "Failed to open the file for recording with errno %s.\n", strerror(errno));
         retval = -1;
     }else if ((rctx->length_file = fopen(length_filename, "w")) == NULL){
         Log(LOG_ERR, "Failed to open the file for length_recording.\n");
         Log(LOG_ERR, "\terrno: %s\n", strerror(errno));
         retval = -1;
     }
+
+    free(length_filename);
 
     return retval;
 }

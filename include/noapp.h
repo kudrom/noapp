@@ -6,11 +6,11 @@
     #include "log.h"
     #include "recorder.h"
     #include "recognizer.h"
-#endif
 
-struct noapp_config{
-    const char *recorder;
-    const char *recognizer;
-    const char *reco_fifo;
-};
-typedef struct noapp_config noapp_config_t;
+    struct noapp_config{
+        const char *recorder;
+        const char *recognizer;
+        const char *reco_fifo;
+    };
+    typedef struct noapp_config noapp_config_t;
+#endif

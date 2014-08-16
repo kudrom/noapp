@@ -1,6 +1,4 @@
-#ifndef RECOGNIZER_H
-    #include "recognizer.h"
-#endif
+#include "recognizer.h"
 
 static int init_sphinx(recognizer_context_t *rctx){
     cmd_ln_t *config;

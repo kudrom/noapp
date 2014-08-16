@@ -56,10 +56,10 @@ static double calculate_rms_power(const uint8_t *data, size_t size)
 
 /*
  * The callback will record when mute isn't activated and:
- *    - it'll allways record the first SILENCE_BREAKPOINTs events that are above the low_point but below the 
+ *    - it'll always record the first SILENCE_BREAKPOINTS events that are above the low_point but below the 
  *    high_point (these are normally the trailing of a utterance).
- *    - it'll allways record if the event is well below the high_level (these are normally the utterances)
- * The counter_activity (which is one of the responsibles to record after all, see the above comment) is reseted
+ *    - it'll always record if the event is well below the high_level (these are normally the utterances)
+ * The counter_activity (which is one of the responsible to record after all, see the above comment) is reseted
  * mainly by a detected high_point utterance or when we have detected a long streak of idle.
  *
  * The callback will split an utterance when nothing interesting has been said in the last HOT_ZONE seconds.
@@ -100,17 +100,19 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
         if (data){
             if (power >= low_point){
                 if (rctx->counter_silence < SILENCE_BREAKPOINT || power > high_point){
+
                     rctx->counter_idle = 0;
+
                     current_time = time(NULL);
                     if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
                         if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO) && (rctx->data_length > 0)){
                             fprintf(rctx->length_file, "%u\n", rctx->data_length);
                             rctx->data_length = 0;
 #ifdef DEBUG
-                            Log(LOG_DEBUG, "utterance cutted.\n");
+                            Log(LOG_DEBUG, "Utterance cut. High: %d total: %d\n", rctx->high_activity, rctx->total_activity);
 #endif
+                            rctx->high_activity = rctx->total_activity = 0;
                         }
-                        rctx->high_activity = rctx->total_activity = 0;
                         rctx->timestamp = current_time;
                     }
 
@@ -124,7 +126,6 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     rctx->is_recording = true;
                     fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
                     rctx->data_length += (unsigned int) length;
-                    //printf("data_length: %d\n", rctx->data_length);
 
 #ifdef DEBUG
                     Log(LOG_DEBUG, "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
@@ -210,6 +211,8 @@ static int init_filename(recorder_context_t *rctx)
     int retval = 0;
     size_t size;
     char *length_filename;
+
+    // TODO: This to a separate file.
     size = strlen(rctx->filename) + 7;
     length_filename = (char *) malloc(size);
     strncpy(length_filename, rctx->filename, strlen(rctx->filename));
@@ -318,6 +321,7 @@ int stop_recording(recorder_context_t *rctx)
     return retval;
 }
 
+//TODO: this may be broken because of the length_file
 int change_recording_file(recorder_context_t *rctx, char *new_filename)
 {
     FILE *file;

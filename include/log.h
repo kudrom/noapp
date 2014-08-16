@@ -6,8 +6,7 @@
 
 #define Log(priority, ...)                                  \
 {                                                           \
-    if (priority == LOG_INFO || priority == LOG_DEBUG)      \
-        printf(__VA_ARGS__);                                \
+    printf(__VA_ARGS__);                                    \
                                                             \
     if (priority != LOG_DEBUG)                              \
         syslog(priority, __VA_ARGS__);                      \

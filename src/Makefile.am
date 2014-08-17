@@ -20,6 +20,6 @@ recorder_CFLAGS += -DDEBUG
 endif
 
 bin_PROGRAMS += recognizer
-recognizer_SOURCES = recognizer_src/recognizer.c $(SOURCES)
+recognizer_SOURCES = recognizer_src/recognizer.c recognizer_src/recon_handles.c $(SOURCES)
 recognizer_LDADD = $(AM_LIBS) $(POCKETSPHINX_LIBS) $(SPHINXBASE_LIBS)
 recognizer_CFLAGS = $(AM_CFLAGS) $(POCKETSPHINX_CFLAGS) $(SPHINXBASE_CFLAGS) -DMODELDIR=\"$(pkgdatadir)\"

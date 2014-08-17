@@ -1,11 +1,11 @@
-#include "rec_handles.h"
+#include "recon_handles.h"
 
-static recorder_context_t *g_rctx;
+static recognizer_context_t *g_rctx;
 
 
 static void shutdown(int sig)
 {
-    stop_recording(g_rctx);
+    stop_recognizing(g_rctx);
     fflush(stdout);
 
     // Fallback to defaults...
@@ -13,7 +13,7 @@ static void shutdown(int sig)
     kill(getpid(), sig);
 }
 
-int init_recorder_handles(recorder_context_t *rctx){
+int init_recognizer_handles(recognizer_context_t *rctx){
     g_rctx = rctx;
 
     signal(SIGINT, shutdown);

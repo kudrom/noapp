@@ -1,6 +1,5 @@
 #include "recorder.h"
 #include "rec_handles.h"
-#include "utils.h"
 
 #ifdef DEBUG
 static FILE *threshold_file;
@@ -18,7 +17,7 @@ static void pa_state_cb(pa_context *ctx, void *userdata)
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
             if (rctx->pa_ready == 1)
-                Log(LOG_ERR, "State callback of pulseAudio return failure in its context.");
+                Log(LOG_ERR, "State callback of pulseAudio return failure in its context.\n");
             rctx->pa_ready = 2;
             break;
         case PA_CONTEXT_READY:
@@ -82,7 +81,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
             retries++;
         } while(retval != 0 && retries < 20);
         if (retries == 20){
-            Log(LOG_ERR, "There was some nasty problems with the opening of %s file.", rctx->filename);
+            Log(LOG_ERR, "There was some nasty problems with the opening of %s file.\n", rctx->filename);
             stop_recording(rctx);
         }
 
@@ -265,11 +264,11 @@ int start_recording(recorder_context_t *rctx)
     }
 
     if ((retval = init_pa(rctx))){
-        Log(LOG_ERR, "Failed in the initializaion of pulse audio\n.");
+        Log(LOG_ERR, "Failed in the initializaion of pulse audio.\n");
         goto exit;
     }
     Log(LOG_INFO, "PulseAudio connected.\n");
-    init_handles(rctx);
+    init_recorder_handles(rctx);
 
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);

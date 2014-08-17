@@ -1,9 +1,13 @@
 #ifndef RECOGNIZER_H
     #define RECOGNIZER_H
+    #include <errno.h>
+    #include <sys/epoll.h>
     #include <pocketsphinx.h>
     #include "log.h"
+    #include "utils.h"
 
     #define CHUNK 512
+    #define MAX_RETRIES 10
 
     /*
      * Main structure to control the recognizer.
@@ -13,7 +17,8 @@
 
         FILE *in;
         char *in_filename;
-        FILE *in_length;
+        FILE *length_file;
+        char *length_filename;
 
         FILE *out;
         char *out_filename;

@@ -24,6 +24,7 @@ static int init_sphinx(recognizer_context_t *rctx){
 
 static int init_filenames(recognizer_context_t *rctx){
     FILE *fh;
+    char *length_filename;
 
     fh = open_file(rctx->in_filename, "rb");
     if (fh == NULL){
@@ -32,22 +33,40 @@ static int init_filenames(recognizer_context_t *rctx){
     }
     rctx->in = fh;
 
+    length_filename = generate_length_filename(rctx->in_filename);
+    fh = open_file(length_filename, "r");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for the recognizer's length.\n");
+        return -1;
+    }
+    rctx->in_length = fh;
+
+    fh = open_file(rctx->out_filename, "w");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for the recognizer's length.\n");
+        return -1;
+    }
+    rctx->out = fh;
+
     return 0;
 }
 
-recognizer_context_t  *init_recognizer_context(char *in_filename){
+recognizer_context_t  *init_recognizer_context(char *in_filename, char *out_filename){
     recognizer_context_t *rctx;
     rctx = (recognizer_context_t *) malloc(sizeof(recognizer_context_t));
     rctx->in_filename = in_filename;
+    rctx->out_filename = out_filename;
 
     return rctx;
 }
 
 int start_recognizing(recognizer_context_t *rctx){
-    int retval = 0;
-
     char const *hyp, *uttid;
     int32 score;
+    int retval = 0;
+    size_t size, acc, nsamp;
+
+    int16 buf[CHUNK];
 
     if (init_sphinx(rctx) < 0){
         Log(LOG_ERR, "Failed to init sphinx.\n");
@@ -60,8 +79,23 @@ int start_recognizing(recognizer_context_t *rctx){
         goto exit;
     }
 
-    if ((retval = ps_decode_raw(rctx->ps, rctx->in, "goforward", -1)) < 0){
-        Log(LOG_ERR, "Cannot decode the raw.");
+    if ((retval = ps_start_utt(rctx->ps, "noapp")) < 0){
+        Log(LOG_ERR, "Failed to start utterance.\n");
+        retval = -1;
+        goto exit;
+    }
+
+    size = acc = 0;
+    fscanf(rctx->in_length, "%zd\n", &size);
+    while (!feof(rctx->in) && acc <= size){
+        nsamp = fread(buf, 2, 512, rctx->in);
+        ps_process_raw(rctx->ps, buf, nsamp, FALSE, FALSE);
+        acc += nsamp;
+    }
+
+    if ((retval = ps_end_utt(rctx->ps)) < 0){
+        Log(LOG_ERR, "Failed to end utterance.\n");
+        retval = -1;
         goto exit;
     }
 
@@ -70,7 +104,7 @@ int start_recognizing(recognizer_context_t *rctx){
     }
     Log(LOG_INFO, "Hypothesis: %s Score: %d\n", hyp, score);
 
-    fprintf(stdout, "\nRecognized: %s\n", hyp);
+    fprintf(rctx->out, "%s\n", hyp);
 
 exit:
     stop_recognizing(rctx);
@@ -85,8 +119,9 @@ int stop_recognizing(recognizer_context_t *rctx){
 
 int main(int argc, char *argv[])
 {
-    char *filename = argc == 1 ? "/tmp/noapp_recording.raw" : argv[1];
+    char *in_filename = argc <= 1 ? "/tmp/noapp_recording.raw" : argv[1];
+    char *out_filename = argc <= 2 ? "/tmp/utterances" : argv[2];
     recognizer_context_t *rctx;
-    rctx = init_recognizer_context(filename);
+    rctx = init_recognizer_context(in_filename, out_filename);
     return start_recognizing(rctx);
 }

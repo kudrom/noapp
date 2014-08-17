@@ -3,6 +3,8 @@
     #include <pocketsphinx.h>
     #include "log.h"
 
+    #define CHUNK 512
+
     /*
      * Main structure to control the recognizer.
      */
@@ -14,6 +16,7 @@
         FILE *in_length;
 
         FILE *out;
+        char *out_filename;
     };
     typedef struct recognizer_context recognizer_context_t;
 

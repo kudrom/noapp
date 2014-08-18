@@ -6,12 +6,13 @@
 char *generate_length_filename(char *base_filename)
 {
     size_t size;
-    char *length_filename;
+    char *length_filename, suffix[8] = ".length";
 
-    size = strlen(base_filename) + 7;
+    size = strlen(base_filename) + 7 + 1;
     length_filename = (char *) malloc(size);
     strncpy(length_filename, base_filename, strlen(base_filename));
-    strncat(length_filename, ".length", 7+1);
+    length_filename[strlen(base_filename)] = '\0';
+    strncat(length_filename, suffix, strlen(suffix));
 
     return length_filename;
 }

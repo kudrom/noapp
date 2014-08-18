@@ -107,9 +107,10 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                         if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO) && (rctx->data_length > 0)){
                             fprintf(rctx->length_file, "%u\n", rctx->data_length);
                             rctx->data_length = 0;
-#ifdef DEBUG
-                            Log(LOG_DEBUG, "Utterance cut. High: %d total: %d\n", rctx->high_activity, rctx->total_activity);
-#endif
+                            Log(LOG_DEBUG, "Utterance cut. High: %d total: %d\n", 
+                                            rctx->high_activity, rctx->total_activity);
+                            //TODO: remove this
+                            Log(LOG_INFO, "Utterance cut.\n");
                             rctx->high_activity = rctx->total_activity = 0;
                         }
                         rctx->timestamp = current_time;
@@ -126,22 +127,18 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
                     rctx->data_length += (unsigned int) length;
 
-#ifdef DEBUG
                     Log(LOG_DEBUG, "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
                             power, low_point, high_point,rctx->threshold, rctx->counter_silence, rctx->counter_idle);
                 }else{
                     Log(LOG_DEBUG, "SS power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
                             power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
                 }
-#endif
             }else{
                 rctx->counter_idle = fmin(++rctx->counter_idle, IDLE_BREAKPOINT);
                 if (rctx->counter_idle == IDLE_BREAKPOINT)
                     rctx->counter_silence = 0;
-#ifdef DEBUG
                 Log(LOG_DEBUG, "   power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
                         power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
-#endif
             }
             pa_stream_drop(stream);
         }
@@ -226,6 +223,8 @@ static int init_filename(recorder_context_t *rctx)
     }
     rctx->length_file = fh;
 
+    Log(LOG_INFO, "Writing into %s and %s.\n", rctx->filename, length_filename);
+
     free(length_filename);
 
     return retval;
@@ -270,6 +269,7 @@ int start_recording(recorder_context_t *rctx)
     Log(LOG_INFO, "PulseAudio connected.\n");
     init_recorder_handles(rctx);
 
+    Log(LOG_INFO, "Calibrating threshold.\n");
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);
     pa_stream_set_read_callback(rctx->recording_stream, detect_threshold_cb, rctx);
@@ -286,10 +286,9 @@ int start_recording(recorder_context_t *rctx)
             goto exit;
         }
     }
-#ifdef DEBUG
     Log(LOG_DEBUG, "Threshold: %f\n", rctx->threshold);
-#endif
 
+    Log(LOG_INFO, "Entering into the mainloop.\n");
     printf("\nNow you can start talking.\n");
     rctx->timestamp = time(NULL);
     pa_stream_set_read_callback(rctx->recording_stream, stream_request_cb, rctx);
@@ -357,7 +356,7 @@ int toggle_recorder(recorder_context_t *rctx)
 
 int main(int argc, char*argv[])
 {
-    char *filename = argc == 1 ? "/tmp/noapp_recording.raw" : argv[1];
+    char *filename = argc == 1 ? "/tmp/noapp.raw" : argv[1];
     recorder_context_t *rctx;
     rctx = init_recorder_context(filename);
     return start_recording(rctx);

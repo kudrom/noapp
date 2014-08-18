@@ -67,6 +67,10 @@ static int load_config(noapp_config_t *config)
         Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
         return -1;
     }
+    if (setup_fifo("/tmp/reco_fifo.length") != 0){
+        Log(LOG_ERR, "Failed when creating fifo's length for recorder-recognizer.\n");
+        return -1;
+    }
     config->reco_fifo = "/tmp/reco_fifo";
 
     return 0;
@@ -99,6 +103,7 @@ int main(int argc, char *argv[])
         }
         goto exit;
     }
+    Log(LOG_INFO, "Started recorder.\n");
 
     recognizer_pid = fork();
     if (recognizer_pid < 0){
@@ -115,6 +120,7 @@ int main(int argc, char *argv[])
         }
         goto exit;
     }
+    Log(LOG_INFO, "Started recognizer.\n");
 
 #ifdef DEBUG
     Log(LOG_DEBUG, "recorder_pid: %d\n", recorder_pid);

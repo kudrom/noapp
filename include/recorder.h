@@ -18,7 +18,7 @@
     #define LOW_BREAKPOINT 0.8
     #define SILENCE_BREAKPOINT 3
     #define IDLE_BREAKPOINT 6
-    #define HOT_ZONE 2
+    #define HOT_ZONE 6
     #define INTERESTING_RATIO 0.3
 
     /*

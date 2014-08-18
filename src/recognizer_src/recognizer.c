@@ -42,6 +42,7 @@ static int init_filenames(recognizer_context_t *rctx)
 {
     FILE *fh;
     char *length_filename;
+    int retval;
 
     fh = open_file(rctx->in_filename, "rb");
     if (fh == NULL){
@@ -59,7 +60,12 @@ static int init_filenames(recognizer_context_t *rctx)
 
     length_filename = generate_length_filename(rctx->in_filename);
     rctx->length_filename = length_filename;
-    return open_length_file(rctx);
+    retval = open_length_file(rctx);
+
+    Log(LOG_INFO, "Reading from %s and %s.\n", rctx->in_filename, length_filename);
+    Log(LOG_INFO, "Writing into %s.\n", rctx->out_filename);
+
+    return retval;
 }
 
 recognizer_context_t  *init_recognizer_context(char *in_filename, char *out_filename)
@@ -82,19 +88,21 @@ int start_recognizing(recognizer_context_t *rctx)
     struct epoll_event event, events[1];
 
     Log(LOG_INFO, "Starting recognizer.\n");
+
     if (init_sphinx(rctx) < 0){
         Log(LOG_ERR, "Failed to init sphinx.\n");
         retval = -1;
         goto exit;
     }
+    Log(LOG_INFO, "Sphinx up and running.\n");
 
     if (init_filenames(rctx) < 0){
         Log(LOG_ERR, "Failed to init filenames.\n");
         retval = -1;
         goto exit;
     }
+    Log(LOG_INFO, "Filenames up and running.\n");
 
-    Log(LOG_INFO, "Setup of epoll.\n");
     if ((epfd = epoll_create1(0)) < 0){
         Log(LOG_ERR, "Failed to initialize epoll with error %s.\n", strerror(errno));
         retval = -1;
@@ -111,7 +119,7 @@ int start_recognizing(recognizer_context_t *rctx)
         goto exit;
     }
 
-    Log(LOG_INFO, "Enter into the mainloop.\n");
+    Log(LOG_INFO, "Entering into the mainloop.\n");
     while(1){
         nrevents = epoll_wait(epfd, events, 1, -1);
         if (nrevents < 0){
@@ -217,7 +225,7 @@ int stop_recognizing(recognizer_context_t *rctx)
 
 int main(int argc, char *argv[])
 {
-    char *in_filename = argc <= 1 ? "/tmp/noapp_recording.raw" : argv[1];
+    char *in_filename = argc <= 1 ? "/tmp/noapp.raw" : argv[1];
     char *out_filename = argc <= 2 ? "/tmp/utterances" : argv[2];
     recognizer_context_t *rctx;
     rctx = init_recognizer_context(in_filename, out_filename);

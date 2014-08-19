@@ -20,6 +20,7 @@
     #define IDLE_BREAKPOINT 6
     #define HOT_ZONE 6
     #define INTERESTING_RATIO 0.3
+    #define NEW_FIFO_CAPACITY 100000
 
     /*
      * Main structure of the recorder subsystem.

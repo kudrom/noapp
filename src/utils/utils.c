@@ -61,10 +61,12 @@ int make_fifo(char *filename, int max_size)
     return retval;
 }
 
-int change_fifo_capacity(char *filename, int capacity)
+static int manage_fifo_capacity(char *filename, int command, int capacity)
 {
     FILE *fh;
     pid_t child;
+    int new_value;
+
     child = fork();
     if (child < 0){
         Log(LOG_ERR, "Failed to create a child to change fifo capacity.\n");
@@ -75,8 +77,23 @@ int change_fifo_capacity(char *filename, int capacity)
         exit(0);
     }
     fh = fopen(filename, "w");
-    fcntl(fileno(fh), F_SETPIPE_SZ, capacity);
+    new_value = fcntl(fileno(fh), command, capacity);
     wait(0);
 
-    return 0;
+    return new_value;
+}
+
+int get_fifo_capacity(char *filename)
+{
+    return manage_fifo_capacity(filename, F_GETPIPE_SZ, 0);
+}
+
+int set_fifo_capacity(char *filename, int capacity)
+{
+    int new_value;
+
+    new_value = manage_fifo_capacity(filename, F_SETPIPE_SZ, capacity);
+    Log(LOG_DEBUG, "New capacity of %s is %d.\n", filename, new_value);
+
+    return new_value;
 }

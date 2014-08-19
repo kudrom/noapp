@@ -213,6 +213,7 @@ static int init_filename(recorder_context_t *rctx)
         return -1;
     }
     rctx->recording_file = fh;
+    set_fifo_capacity(rctx->filename, NEW_FIFO_CAPACITY);
 
     length_filename = generate_length_filename(rctx->filename);
     fh = open_file(length_filename, "w");

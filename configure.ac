@@ -19,21 +19,25 @@ AC_PROG_MKDIR_P
 # Checks for libraries.
 AC_CHECK_LIB([pulse], [pa_stream_new_with_proplist])
 AC_CHECK_LIB([m], [sqrt])
+AC_CHECK_LIB([pocketsphinx], [ps_init])
+AC_CHECK_LIB([sphinxbase], [cmd_ln_init])
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h syslog.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
 AC_TYPE_INT16_T
+AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
+AC_FUNC_FORK
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([sqrt strerror])
+AC_CHECK_FUNCS([mkfifo sqrt strerror])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile])

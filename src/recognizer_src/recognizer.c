@@ -88,6 +88,7 @@ int start_recognizing(recognizer_context_t *rctx)
     struct epoll_event event, events[1];
 
     Log(LOG_INFO, "Starting recognizer.\n");
+    init_recognizer_handles(rctx);
 
     if (init_sphinx(rctx) < 0){
         Log(LOG_ERR, "Failed to init sphinx.\n");
@@ -109,8 +110,6 @@ int start_recognizing(recognizer_context_t *rctx)
         goto exit;
     }
 
-    init_recognizer_handles(rctx);
-
     event.data.fd = fileno(rctx->length_file);
     event.events = EPOLLIN;
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, fileno(rctx->length_file), &event) < 0){
@@ -123,7 +122,7 @@ int start_recognizing(recognizer_context_t *rctx)
     while(1){
         nrevents = epoll_wait(epfd, events, 1, -1);
         if (nrevents < 0){
-            Log(LOG_ERR, "There was an error in the epoll's wait for the lengh file with error %s.\n", strerror(errno));
+            Log(LOG_ERR, "There was an error in the epoll's wait for the length file with error %s.\n", strerror(errno));
 
 check_retries:
             if (retries < MAX_RETRIES){
@@ -144,6 +143,7 @@ check_retries:
             goto check_retries;
         }
         if (events[0].events & EPOLLHUP){
+            Log(LOG_INFO, "The other side of the FIFO hanged up.\n");
             if (epoll_ctl(epfd, EPOLL_CTL_DEL, fileno(rctx->length_file), &event) < 0){
                 retval = -1;
                 goto exit;
@@ -173,12 +173,14 @@ check_retries:
             goto exit;
         }
 
+        Log(LOG_DEBUG, "Beggining.\n");
         retries = 0;
         if ((retval = ps_start_utt(rctx->ps, "noapp")) < 0){
             Log(LOG_ERR, "Failed to start utterance.\n");
             retval = -1;
             goto exit;
         }
+        Log(LOG_DEBUG, "After retries\n");
 
         while (!feof(rctx->length_file)){
             size = acc = 0;
@@ -216,6 +218,8 @@ int stop_recognizing(recognizer_context_t *rctx)
         fclose(rctx->in);
     if (rctx->length_file)
         fclose(rctx->length_file);
+    if (rctx->out)
+        fclose(rctx->out);
     ps_free(rctx->ps);
     free(rctx->length_filename);
     free(rctx);

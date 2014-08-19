@@ -106,11 +106,10 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
                         if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO) && (rctx->data_length > 0)){
                             fprintf(rctx->length_file, "%u\n", rctx->data_length);
+                            fflush(rctx->length_file);
                             rctx->data_length = 0;
-                            Log(LOG_DEBUG, "Utterance cut. High: %d total: %d\n", 
+                            Log(LOG_DEBUG, "## Utterance cut. High: %d total: %d\n", 
                                             rctx->high_activity, rctx->total_activity);
-                            //TODO: remove this
-                            Log(LOG_INFO, "Utterance cut.\n");
                             rctx->high_activity = rctx->total_activity = 0;
                         }
                         rctx->timestamp = current_time;

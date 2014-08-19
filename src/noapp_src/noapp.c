@@ -22,31 +22,6 @@ static int daemonize()
     return 0;
 }
 
-static int setup_fifo(char *filename)
-{
-    int retval = 0;
-
-    if ((retval = mkfifo(filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0){
-        switch (errno){
-            case EEXIST:
-                Log(LOG_ERR, "The named file %s already exists.\n", filename);
-                break;
-            case ENOSPC:
-                Log(LOG_ERR, "The directory or file system cannot be extended for %s.\n", filename);
-                break;
-            case EROFS:
-                Log(LOG_ERR, "The directory for %s is read-only.\n", filename);
-                break;
-            default:
-                Log(LOG_ERR, "Some nasty error happended around mkfifo for %s.\n", filename);
-                break;
-        }
-        retval = -1;
-    }
-
-    return retval;
-}
-
 static int start_recorder(noapp_config_t *config)
 {
     execl(config->recorder, "noapp's recorder", config->reco_fifo, NULL);
@@ -63,11 +38,11 @@ static int load_config(noapp_config_t *config)
 {
     config->recorder = "/home/kudrom/src/noapp/build/bin/recorder";
     config->recognizer = "/home/kudrom/src/noapp/build/bin/recognizer";
-    if (setup_fifo("/tmp/reco_fifo") != 0){
+    if (make_fifo("/tmp/reco_fifo") != 0){
         Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
         return -1;
     }
-    if (setup_fifo("/tmp/reco_fifo.length") != 0){
+    if (make_fifo("/tmp/reco_fifo.length") != 0){
         Log(LOG_ERR, "Failed when creating fifo's length for recorder-recognizer.\n");
         return -1;
     }

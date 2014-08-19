@@ -1,11 +1,10 @@
 #ifndef NOAPP_H
     #define NOAPP_H
-    #include <fcntl.h>
     #include <stdlib.h>
-    #include <sys/stat.h>
     #include "log.h"
     #include "recorder.h"
     #include "recognizer.h"
+    #include "utils.h"
 
     struct noapp_config{
         const char *recorder;

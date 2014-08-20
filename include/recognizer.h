@@ -17,8 +17,6 @@
 
         FILE *in;
         char *in_filename;
-        FILE *length_file;
-        char *length_filename;
 
         FILE *out;
         char *out_filename;

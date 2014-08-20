@@ -24,25 +24,9 @@ static int init_sphinx(recognizer_context_t *rctx)
     return 0;
 }
 
-static int open_length_file(recognizer_context_t *rctx)
-{
-    FILE *fh;
-
-    fh = open_file(rctx->length_filename, "r");
-    if (fh == NULL){
-        Log(LOG_ERR, "Failed to open the file for the recognizer's length.\n");
-        return -1;
-    }
-    rctx->length_file = fh;
-
-    return 0;
-}
-
 static int init_filenames(recognizer_context_t *rctx)
 {
     FILE *fh;
-    char *length_filename;
-    int retval;
 
     fh = open_file(rctx->in_filename, "rb");
     if (fh == NULL){
@@ -53,19 +37,15 @@ static int init_filenames(recognizer_context_t *rctx)
 
     fh = open_file(rctx->out_filename, "w");
     if (fh == NULL){
-        Log(LOG_ERR, "Failed to open the file for the recognizer's length.\n");
+        Log(LOG_ERR, "Failed to open the out file of recognizer.\n");
         return -1;
     }
     rctx->out = fh;
 
-    length_filename = generate_length_filename(rctx->in_filename);
-    rctx->length_filename = length_filename;
-    retval = open_length_file(rctx);
-
-    Log(LOG_INFO, "Reading from %s and %s.\n", rctx->in_filename, length_filename);
+    Log(LOG_INFO, "Reading from %s.\n", rctx->in_filename);
     Log(LOG_INFO, "Writing into %s.\n", rctx->out_filename);
 
-    return retval;
+    return 0;
 }
 
 recognizer_context_t  *init_recognizer_context(char *in_filename, char *out_filename)
@@ -82,8 +62,8 @@ int start_recognizing(recognizer_context_t *rctx)
 {
     char const *hyp, *uttid;
     int32 score;
-    int retval = 0, epfd, nrevents, retries = 0;
-    size_t size, acc, nsamp;
+    int retval = 0, epfd, nrevents, retries = 0, fd_in;
+    size_t size;
     int16 buf[CHUNK];
     struct epoll_event event, events[1];
 
@@ -110,10 +90,11 @@ int start_recognizing(recognizer_context_t *rctx)
         goto exit;
     }
 
-    event.data.fd = fileno(rctx->length_file);
+    fd_in = fileno(rctx->in);
+    event.data.fd = fd_in;
     event.events = EPOLLIN;
-    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fileno(rctx->length_file), &event) < 0){
-        Log(LOG_ERR, "Failed to add the length file to the epoll system with error %s.\n", strerror(errno));
+    if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd_in, &event) < 0){
+        Log(LOG_ERR, "Failed to add the in file to the epoll system with error %s.\n", strerror(errno));
         retval = -1;
         goto exit;
     }
@@ -122,7 +103,7 @@ int start_recognizing(recognizer_context_t *rctx)
     while(1){
         nrevents = epoll_wait(epfd, events, 1, -1);
         if (nrevents < 0){
-            Log(LOG_ERR, "There was an error in the epoll's wait for the length file with error %s.\n", strerror(errno));
+            Log(LOG_ERR, "There was an error in the epoll's wait for the out file with error %s.\n", strerror(errno));
 
 check_retries:
             if (retries < MAX_RETRIES){
@@ -143,20 +124,25 @@ check_retries:
             goto check_retries;
         }
         if (events[0].events & EPOLLHUP){
+            FILE *file;
+
             Log(LOG_INFO, "The other side of the FIFO hanged up.\n");
-            if (epoll_ctl(epfd, EPOLL_CTL_DEL, fileno(rctx->length_file), &event) < 0){
+            if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd_in, &event) < 0){
                 retval = -1;
                 goto exit;
             }
 
-            fclose(rctx->length_file);
-            if (open_length_file(rctx) < 0){
+            // TODO: Can a deadlock be possible?
+            fclose(rctx->in);
+            if ((file = open_file(rctx->in_filename, "rb")) < 0){
                 retval = -1;
                 goto exit;
             }
+            rctx->in = file;
 
-            event.data.fd = fileno(rctx->length_file);
-            if (epoll_ctl(epfd, EPOLL_CTL_ADD, fileno(rctx->length_file), &event) < 0){
+            fd_in = fileno(rctx->in);
+            event.data.fd = fd_in;
+            if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd_in, &event) < 0){
                 retval = -1;
                 goto exit;
             }
@@ -167,42 +153,38 @@ check_retries:
             retval = -1;
             goto exit;
         }
-        if (events[0].data.fd != fileno(rctx->length_file)){
+        if (events[0].data.fd != fd_in){
             Log(LOG_ERR, "epoll is callbacking with a different file descriptor.\n");
             retval = -1;
             goto exit;
         }
+        Log(LOG_DEBUG, "Before\n");
 
-        Log(LOG_DEBUG, "Beggining.\n");
         retries = 0;
+
         if ((retval = ps_start_utt(rctx->ps, "noapp")) < 0){
             Log(LOG_ERR, "Failed to start utterance.\n");
             retval = -1;
             goto exit;
         }
-        Log(LOG_DEBUG, "After retries\n");
+        Log(LOG_DEBUG, "After\n");
 
-        while (!feof(rctx->length_file)){
-            size = acc = 0;
-            fscanf(rctx->length_file, "%zd\n", &size);
-            while (!feof(rctx->in) && acc <= size){
-                nsamp = fread(buf, 2, 512, rctx->in);
-                ps_process_raw(rctx->ps, buf, nsamp, FALSE, FALSE);
-                acc += 2*nsamp;
-            }
+        while (!feof(rctx->in)){
+            size = fread(buf, 2, 512, rctx->in);
+            ps_process_raw(rctx->ps, buf, size, FALSE, FALSE);
+        }
 
-            if ((retval = ps_end_utt(rctx->ps)) < 0){
-                Log(LOG_ERR, "Failed to end utterance.\n");
-                retval = -1;
-                goto exit;
-            }
+        if ((retval = ps_end_utt(rctx->ps)) < 0){
+            Log(LOG_ERR, "Failed to end utterance.\n");
+            retval = -1;
+            goto exit;
+        }
 
-            if ((hyp = ps_get_hyp(rctx->ps, &score, &uttid)) == NULL || (strlen(hyp) == 0)){
-                Log(LOG_INFO, "Cannot get a hypothesis.\n");
-            }else{
-                fprintf(rctx->out, "%s\n", hyp);
-                Log(LOG_INFO, "Hypothesis: %s Score: %d\n", hyp, score);
-            }
+        if ((hyp = ps_get_hyp(rctx->ps, &score, &uttid)) == NULL || (strlen(hyp) == 0)){
+            Log(LOG_INFO, "Cannot get a hypothesis.\n");
+        }else{
+            fprintf(rctx->out, "%s\n", hyp);
+            Log(LOG_INFO, "Hypothesis: %s Score: %d\n", hyp, score);
         }
     }
 
@@ -216,12 +198,9 @@ int stop_recognizing(recognizer_context_t *rctx)
     Log(LOG_INFO, "Stopping recognizer.\n");
     if (rctx->in)
         fclose(rctx->in);
-    if (rctx->length_file)
-        fclose(rctx->length_file);
     if (rctx->out)
         fclose(rctx->out);
     ps_free(rctx->ps);
-    free(rctx->length_filename);
     free(rctx);
     Log(LOG_INFO, "DONE");
     return 0;

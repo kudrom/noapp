@@ -53,6 +53,24 @@ static double calculate_rms_power(const uint8_t *data, size_t size)
     return sqrt(sum / size);
 }
 
+static void buffer(recorder_context_t *rctx, const void *data, size_t size)
+{
+    memcpy(rctx->buffer + rctx->data_length, data, size);
+    rctx->data_length += (unsigned int) size;
+}
+
+static void dump(recorder_context_t *rctx)
+{
+    unsigned int acc = 0;
+    size_t written;
+
+    do{
+        written = fwrite(rctx->buffer, sizeof(uint8_t), rctx->data_length, rctx->recording_file);
+        acc += (unsigned int) written;
+    }while(acc != rctx->data_length);
+    rctx->data_length = 0;
+}
+
 /*
  * The callback will record when mute isn't activated and:
  *    - it'll always record the first SILENCE_BREAKPOINTS events that are above the low_point but below the 
@@ -104,12 +122,11 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 
                     current_time = time(NULL);
                     if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
-                        if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO) && (rctx->data_length > 0)){
-                            fprintf(rctx->length_file, "%u\n", rctx->data_length);
-                            fflush(rctx->length_file);
-                            rctx->data_length = 0;
-                            Log(LOG_DEBUG, "## Utterance cut. High: %d total: %d\n", 
-                                            rctx->high_activity, rctx->total_activity);
+                        if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO)){
+                            Log(LOG_DEBUG, "## Utterance cut. Length: %d High: %d total: %d\n", 
+                                            rctx->data_length, rctx->high_activity, rctx->total_activity);
+                            Log(LOG_INFO, "Utterance cut with length %d.\n", rctx->data_length);
+                            dump(rctx);
                             rctx->high_activity = rctx->total_activity = 0;
                         }
                         rctx->timestamp = current_time;
@@ -123,8 +140,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     }
 
                     rctx->is_recording = true;
-                    fwrite(data, sizeof(uint8_t), size, rctx->recording_file);
-                    rctx->data_length += (unsigned int) length;
+                    buffer(rctx, data, size);
 
                     Log(LOG_DEBUG, "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
                             power, low_point, high_point,rctx->threshold, rctx->counter_silence, rctx->counter_idle);
@@ -204,28 +220,17 @@ exit:
 static int init_filename(recorder_context_t *rctx)
 {
     int retval = 0;
-    char *length_filename;
     FILE *fh;
 
-    fh = open_file(rctx->filename, "wb");
+    fh = open_file(rctx->filename, "ab");
     if (fh == NULL){
         Log(LOG_ERR, "Failed to open the file for recording.\n");
         return -1;
     }
     rctx->recording_file = fh;
-    set_fifo_capacity(rctx->filename, NEW_FIFO_CAPACITY);
+    set_fifo_capacity(rctx->filename, OUT_CAPACITY);
 
-    length_filename = generate_length_filename(rctx->filename);
-    fh = open_file(length_filename, "w");
-    if (fh == NULL){
-        Log(LOG_ERR, "Failed to open the file for the recording's length.\n");
-        return -1;
-    }
-    rctx->length_file = fh;
-
-    Log(LOG_INFO, "Writing into %s and %s.\n", rctx->filename, length_filename);
-
-    free(length_filename);
+    Log(LOG_INFO, "Writing into %s.\n", rctx->filename);
 
     return retval;
 }
@@ -309,8 +314,6 @@ int stop_recording(recorder_context_t *rctx)
 #endif
     if (rctx->recording_file)
         fclose(rctx->recording_file);
-    if (rctx->length_file)
-        fclose(rctx->length_file);
     pa_mainloop_quit(rctx->pa_ml, retval);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);
@@ -320,7 +323,6 @@ int stop_recording(recorder_context_t *rctx)
     return retval;
 }
 
-//TODO: this may be broken because of the length_file
 int change_recording_file(recorder_context_t *rctx, char *new_filename)
 {
     FILE *file;

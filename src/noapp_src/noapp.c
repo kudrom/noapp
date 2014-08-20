@@ -38,12 +38,8 @@ static int load_config(noapp_config_t *config)
 {
     config->recorder = "/home/kudrom/src/noapp/build/bin/recorder";
     config->recognizer = "/home/kudrom/src/noapp/build/bin/recognizer";
-    if (make_fifo("/tmp/reco_fifo") != 0){
+    if (make_fifo("/tmp/reco_fifo", -1) != 0){
         Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
-        return -1;
-    }
-    if (make_fifo("/tmp/reco_fifo.length") != 0){
-        Log(LOG_ERR, "Failed when creating fifo's length for recorder-recognizer.\n");
         return -1;
     }
     config->reco_fifo = "/tmp/reco_fifo";

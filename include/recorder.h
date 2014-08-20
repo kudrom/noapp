@@ -20,7 +20,8 @@
     #define IDLE_BREAKPOINT 6
     #define HOT_ZONE 6
     #define INTERESTING_RATIO 0.3
-    #define NEW_FIFO_CAPACITY 100000
+    #define OUT_CAPACITY 200000
+    #define SIZE_BUFFER 200000
 
     /*
      * Main structure of the recorder subsystem.
@@ -30,8 +31,8 @@
         bool dirty_filename;
         FILE *recording_file;
 
-        FILE *length_file;
         unsigned int data_length;
+        uint8_t buffer[SIZE_BUFFER];
 
         int counter_silence;
         int counter_idle;

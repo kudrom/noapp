@@ -57,6 +57,8 @@ int make_fifo(char *filename, int max_size)
         }
         retval = -1;
     }
+    if (max_size != -1)
+        set_fifo_capacity(filename, max_size);
 
     return retval;
 }

@@ -197,6 +197,7 @@ check_retries:
             Log(LOG_INFO, "Cannot get a hypothesis.\n");
         }else{
             fprintf(rctx->out, "%s\n", hyp);
+            fflush(rctx->out);
             Log(LOG_INFO, "Hypothesis: %s Score: %d\n", hyp, score);
         }
     }

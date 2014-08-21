@@ -43,6 +43,10 @@ static int load_config(noapp_config_t *config)
         return -1;
     }
     config->reco_fifo = "/tmp/reco_fifo";
+    if (make_fifo("/tmp/reco_fifo.length", -1) != 0){
+        Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer's length.\n");
+        return -1;
+    }
 
     return 0;
 }

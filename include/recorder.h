@@ -18,7 +18,7 @@
     #define LOW_BREAKPOINT 0.8
     #define SILENCE_BREAKPOINT 3
     #define IDLE_BREAKPOINT 6
-    #define HOT_ZONE 6
+    #define HOT_ZONE 3
     #define INTERESTING_RATIO 0.3
     #define OUT_CAPACITY 200000
     #define SIZE_BUFFER 200000
@@ -33,6 +33,7 @@
 
         unsigned int data_length;
         uint8_t buffer[SIZE_BUFFER];
+        FILE *length_file;
 
         int counter_silence;
         int counter_idle;

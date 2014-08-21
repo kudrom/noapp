@@ -132,7 +132,6 @@ check_retries:
                 goto exit;
             }
 
-            // TODO: Can a deadlock be possible?
             fclose(rctx->in);
             if ((file = open_file(rctx->in_filename, "rb")) < 0){
                 retval = -1;
@@ -158,7 +157,6 @@ check_retries:
             retval = -1;
             goto exit;
         }
-        Log(LOG_DEBUG, "Before\n");
 
         retries = 0;
 
@@ -167,13 +165,14 @@ check_retries:
             retval = -1;
             goto exit;
         }
-        Log(LOG_DEBUG, "After\n");
 
-        while (!feof(rctx->in)){
+        Log(LOG_INFO, "Before writing\n");
+        do{
             size = fread(buf, 2, 512, rctx->in);
             ps_process_raw(rctx->ps, buf, size, FALSE, FALSE);
-        }
+        }while (size != 0);
 
+        Log(LOG_INFO, "After writing\n");
         if ((retval = ps_end_utt(rctx->ps)) < 0){
             Log(LOG_ERR, "Failed to end utterance.\n");
             retval = -1;

@@ -5,7 +5,7 @@
 static FILE *threshold_file;
 #endif
 
-static int init_filename(recorder_context_t *);
+static int init_filenames(recorder_context_t *rctx);
 
 static void pa_state_cb(pa_context *ctx, void *userdata)
 {
@@ -68,7 +68,11 @@ static void dump(recorder_context_t *rctx)
         written = fwrite(rctx->buffer, sizeof(uint8_t), rctx->data_length, rctx->recording_file);
         acc += (unsigned int) written;
     }while(acc != rctx->data_length);
+
+    fprintf(rctx->length_file, "%u\n", rctx->data_length);
+    fflush(rctx->length_file);
     rctx->data_length = 0;
+    Log(LOG_DEBUG, "Dumped.\n");
 }
 
 /*
@@ -92,10 +96,11 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 
     if (rctx->dirty_filename){
         fclose(rctx->recording_file);
+        fclose(rctx->length_file);
 
         retries = 0;
         do{
-            retval = init_filename(rctx);
+            retval = init_filenames(rctx);
             retries++;
         } while(retval != 0 && retries < 20);
         if (retries == 20){
@@ -123,9 +128,8 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     current_time = time(NULL);
                     if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
                         if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO)){
-                            Log(LOG_DEBUG, "## Utterance cut. Length: %d High: %d total: %d\n", 
+                            Log(LOG_INFO, "## Utterance cut. Length: %d High: %d total: %d\n", 
                                             rctx->data_length, rctx->high_activity, rctx->total_activity);
-                            Log(LOG_INFO, "Utterance cut with length %d.\n", rctx->data_length);
                             dump(rctx);
                             rctx->high_activity = rctx->total_activity = 0;
                         }
@@ -217,10 +221,11 @@ exit:
     return retval;
 }
 
-static int init_filename(recorder_context_t *rctx)
+static int init_filenames(recorder_context_t *rctx)
 {
     int retval = 0;
     FILE *fh;
+    char *length_filename;
 
     fh = open_file(rctx->filename, "ab");
     if (fh == NULL){
@@ -230,7 +235,15 @@ static int init_filename(recorder_context_t *rctx)
     rctx->recording_file = fh;
     set_fifo_capacity(rctx->filename, OUT_CAPACITY);
 
-    Log(LOG_INFO, "Writing into %s.\n", rctx->filename);
+    length_filename = generate_length_filename(rctx->filename);
+    fh = open_file(length_filename, "w");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for the recording's length.\n");
+        return -1;
+    }
+    rctx->length_file = fh;
+
+    free(length_filename);
 
     return retval;
 }
@@ -262,17 +275,20 @@ int start_recording(recorder_context_t *rctx)
     time_t current_time;
 
     Log(LOG_INFO, "Starting recorder.\n");
-    if ((retval = init_filename(rctx))){
+
+    init_recorder_handles(rctx);
+
+    if ((retval = init_filenames(rctx))){
         Log(LOG_ERR, "Failed in the initialization of the recording file.\n");
         goto exit;
     }
+    Log(LOG_INFO, "Filenames created.\n");
 
     if ((retval = init_pa(rctx))){
         Log(LOG_ERR, "Failed in the initializaion of pulse audio.\n");
         goto exit;
     }
     Log(LOG_INFO, "PulseAudio connected.\n");
-    init_recorder_handles(rctx);
 
     Log(LOG_INFO, "Calibrating threshold.\n");
     printf("*****  ATTENTION  *****\n");
@@ -312,8 +328,8 @@ int stop_recording(recorder_context_t *rctx)
 #ifdef DEBUG
     fclose(threshold_file);
 #endif
-    if (rctx->recording_file)
-        fclose(rctx->recording_file);
+    fclose(rctx->recording_file);
+    fclose(rctx->length_file);
     pa_mainloop_quit(rctx->pa_ml, retval);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);

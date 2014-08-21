@@ -64,13 +64,12 @@ static void dump(recorder_context_t *rctx)
     unsigned int acc = 0;
     size_t written;
 
+    fprintf(rctx->length_file, "%u\n", rctx->data_length);
+    fflush(rctx->length_file);
     do{
         written = fwrite(rctx->buffer, sizeof(uint8_t), rctx->data_length, rctx->recording_file);
         acc += (unsigned int) written;
     }while(acc != rctx->data_length);
-
-    fprintf(rctx->length_file, "%u\n", rctx->data_length);
-    fflush(rctx->length_file);
     rctx->data_length = 0;
     Log(LOG_DEBUG, "Dumped.\n");
 }

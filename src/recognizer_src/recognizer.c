@@ -27,6 +27,7 @@ static int init_sphinx(recognizer_context_t *rctx)
 static int init_filenames(recognizer_context_t *rctx)
 {
     FILE *fh;
+    char *length_filename;
 
     fh = open_file(rctx->in_filename, "rb");
     if (fh == NULL){
@@ -34,6 +35,16 @@ static int init_filenames(recognizer_context_t *rctx)
         return -1;
     }
     rctx->in = fh;
+
+    printf("fuck\n");
+    length_filename = generate_length_filename(rctx->in_filename);
+    printf("ffuck\n");
+    fh = open_file(length_filename, "r");
+    if (fh == NULL){
+        Log(LOG_ERR, "Failed to open the file for the recording's length.\n");
+        return -1;
+    }
+    rctx->length_file = fh;
 
     fh = open_file(rctx->out_filename, "w");
     if (fh == NULL){
@@ -44,6 +55,8 @@ static int init_filenames(recognizer_context_t *rctx)
 
     Log(LOG_INFO, "Reading from %s.\n", rctx->in_filename);
     Log(LOG_INFO, "Writing into %s.\n", rctx->out_filename);
+
+    free(length_filename);
 
     return 0;
 }
@@ -63,7 +76,7 @@ int start_recognizing(recognizer_context_t *rctx)
     char const *hyp, *uttid;
     int32 score;
     int retval = 0, epfd, nrevents, retries = 0, fd_in;
-    size_t size;
+    size_t size, acc, nsamp;
     int16 buf[CHUNK];
     struct epoll_event event, events[1];
 
@@ -166,13 +179,14 @@ check_retries:
             goto exit;
         }
 
-        Log(LOG_INFO, "Before writing\n");
-        do{
-            size = fread(buf, 2, 512, rctx->in);
-            ps_process_raw(rctx->ps, buf, size, FALSE, FALSE);
-        }while (size != 0);
+        size = acc = 0;
+        fscanf(rctx->length_file, "%zd\n", &size);
+        while (acc <= size){
+            nsamp = fread(buf, 2, 512, rctx->in);
+            ps_process_raw(rctx->ps, buf, nsamp, FALSE, FALSE);
+            acc += 2*nsamp;
+        }
 
-        Log(LOG_INFO, "After writing\n");
         if ((retval = ps_end_utt(rctx->ps)) < 0){
             Log(LOG_ERR, "Failed to end utterance.\n");
             retval = -1;

@@ -29,7 +29,9 @@ FILE *open_file(char *filename, char *mode)
         return NULL;
     }
     if (feof(fh) != 0){
-        Log(LOG_ERR, "Failed to open %s because eof has been reached.\n", filename);
+        Log(LOG_ERR,
+            "Failed to open %s because eof has been reached.\n",
+            filename);
         return NULL;
     }
 
@@ -43,16 +45,24 @@ int make_fifo(char *filename, int max_size)
     if ((retval = mkfifo(filename, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) < 0){
         switch (errno){
             case EEXIST:
-                Log(LOG_ERR, "The named file %s already exists.\n", filename);
+                Log(LOG_ERR,
+                    "The named file %s already exists.\n",
+                    filename);
                 break;
             case ENOSPC:
-                Log(LOG_ERR, "The directory or file system cannot be extended for %s.\n", filename);
+                Log(LOG_ERR,
+                    "The directory or file system cannot be extended for %s.\n",
+                    filename);
                 break;
             case EROFS:
-                Log(LOG_ERR, "The directory for %s is read-only.\n", filename);
+                Log(LOG_ERR,
+                    "The directory for %s is read-only.\n",
+                    filename);
                 break;
             default:
-                Log(LOG_ERR, "Some nasty error happended around mkfifo for %s.\n", filename);
+                Log(LOG_ERR,
+                    "Some nasty error happended around mkfifo for %s.\n",
+                    filename);
                 break;
         }
         retval = -1;

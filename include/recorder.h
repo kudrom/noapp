@@ -19,8 +19,10 @@
     #define SILENCE_BREAKPOINT 3
     #define IDLE_BREAKPOINT 6
     #define HOT_ZONE 1
-    #define INTERESTING_RATIO 0.2
-    #define SIZE_BUFFER 200000 // This is shared by the buffer size and the fifo capacity
+    #define INTERESTING_RATIO 0
+
+    // This is shared by the buffer size and the fifo capacity.2
+    #define SIZE_BUFFER 200000 
 
     /*
      * Main structure of the recorder subsystem.
@@ -56,8 +58,9 @@
     typedef struct recorder_context recorder_context_t;
 
     /*
-     * To use the NoApp recorder first you must initialize a correct recording_context
-     * and then you can start recording with a call to start_recording(rctx);
+     * To use the NoApp recorder first you must initialize a correct 
+     * recording_context and then you can start recording with a call 
+     * to start_recording(rctx);
      */
     recorder_context_t *init_recorder_context(char *filename);
 

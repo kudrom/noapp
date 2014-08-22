@@ -25,8 +25,8 @@
     typedef struct recognizer_context recognizer_context_t;
 
     /*
-     * This must be called to call with the result to start_recognizing and all the
-     * following functions.
+     * This must be called to call with the result to start_recognizing and 
+     * all the following functions.
      */
     recognizer_context_t *init_recognizer_context();
 

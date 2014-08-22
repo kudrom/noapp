@@ -39,12 +39,14 @@ static int load_config(noapp_config_t *config)
     config->recorder = "/home/kudrom/src/noapp/build/bin/recorder";
     config->recognizer = "/home/kudrom/src/noapp/build/bin/recognizer";
     if (make_fifo("/tmp/reco_fifo", -1) != 0){
-        Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer.\n");
+        Log(LOG_ERR,
+            "Failed when creating fifo for recorder-recognizer.\n");
         return -1;
     }
     config->reco_fifo = "/tmp/reco_fifo";
     if (make_fifo("/tmp/reco_fifo.length", -1) != 0){
-        Log(LOG_ERR, "Failed when creating fifo for recorder-recognizer's length.\n");
+        Log(LOG_ERR,
+            "Failed when creating fifo for recorder-recognizer's length.\n");
         return -1;
     }
 
@@ -74,7 +76,9 @@ int main(int argc, char *argv[])
             retval = -1;
         }else{
             retval = start_recorder(&config);
-            Log(LOG_ERR, "execl failed in recorder with errno %s.", strerror(retval));
+            Log(LOG_ERR,
+                "execl failed in recorder with errno %s.",
+                strerror(retval));
         }
         goto exit;
     }
@@ -91,7 +95,9 @@ int main(int argc, char *argv[])
             retval = -1;
         }else{
             retval = start_recognizer(&config);
-            Log(LOG_ERR, "execl failed in recognizer with errno %s.", strerror(retval));
+            Log(LOG_ERR,
+                "execl failed in recognizer with errno %s.",
+                strerror(retval));
         }
         goto exit;
     }

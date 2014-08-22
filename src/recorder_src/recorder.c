@@ -5,6 +5,12 @@
 static FILE *threshold_file;
 #endif
 
+/* #####################
+ * # PRIVATE INTERFACE #
+ * #####################
+ */
+
+
 static int init_filenames(recorder_context_t *rctx);
 
 static void pa_state_cb(pa_context *ctx, void *userdata)
@@ -17,7 +23,8 @@ static void pa_state_cb(pa_context *ctx, void *userdata)
         case PA_CONTEXT_FAILED:
         case PA_CONTEXT_TERMINATED:
             if (rctx->pa_ready == 1)
-                Log(LOG_ERR, "State callback of pulseAudio return failure in its context.\n");
+                Log(LOG_ERR, 
+                    "State callback of pulseAudio return failure in its context.\n");
             rctx->pa_ready = 2;
             break;
         case PA_CONTEXT_READY:
@@ -32,6 +39,9 @@ static void pa_state_cb(pa_context *ctx, void *userdata)
     }
 }
 
+/*
+ * Calculates the square sum of a sequence of length equal to size
+ */
 static double sqsum(const uint8_t *data, size_t size)
 {
     size_t i;
@@ -47,18 +57,27 @@ static double sqsum(const uint8_t *data, size_t size)
     return sum;
 }
 
+/*
+ * Calculates the root-median-square power of a sequence of size's length
+ */
 static double calculate_rms_power(const uint8_t *data, size_t size)
 {
     double sum = sqsum(data, size);
     return sqrt(sum / size);
 }
 
+/*
+ * Buffer the data
+ */
 static void buffer(recorder_context_t *rctx, const void *data, size_t size)
 {
     memcpy(rctx->buffer + rctx->data_length, data, size);
     rctx->data_length += (unsigned int) size;
 }
 
+/*
+ * Dump the buffered data to the output file
+ */
 static void dump(recorder_context_t *rctx)
 {
     unsigned int acc = 0;
@@ -67,13 +86,17 @@ static void dump(recorder_context_t *rctx)
     fprintf(rctx->length_file, "%u\n", rctx->data_length);
     fflush(rctx->length_file);
     do{
-        written = fwrite(rctx->buffer, sizeof(uint8_t), rctx->data_length, rctx->recording_file);
+        written = fwrite(rctx->buffer, sizeof(uint8_t),
+                         rctx->data_length, rctx->recording_file);
         acc += (unsigned int) written;
     }while(acc != rctx->data_length);
     rctx->data_length = 0;
     Log(LOG_DEBUG, "Dumped.\n");
 }
 
+/*
+ * Predicate that returns true when it's interesting to cut a data stream
+ */
 static bool is_interesting(recorder_context_t *rctx)
 {
     double metric;
@@ -83,8 +106,10 @@ static bool is_interesting(recorder_context_t *rctx)
     rctx->high_activity = 0;
     if (metric < INTERESTING_RATIO){
         rctx->old_highs = 0;
-        Log(LOG_INFO, "## Utterance cut. Length: %d Metric: %f Old_high: %d High: %d total: %d\n", 
-                    rctx->data_length, metric, rctx->old_highs, rctx->high_activity, rctx->total_activity);
+        Log(LOG_INFO, 
+            "## Utterance cut. Length: %d Metric: %f Old_high: %d High: %d total: %d\n", 
+            rctx->data_length, metric, rctx->old_highs,
+            rctx->high_activity, rctx->total_activity);
         return true;
     }else{
         rctx->old_highs += rctx->high_activity;
@@ -94,13 +119,18 @@ static bool is_interesting(recorder_context_t *rctx)
 
 /*
  * The callback will record when mute isn't activated and:
- *    - it'll always record the first SILENCE_BREAKPOINTS events that are above the low_point but below the 
- *    high_point (these are normally the trailing of a utterance).
- *    - it'll always record if the event is well below the high_level (these are normally the utterances)
- * The counter_activity (which is one of the responsible to record after all, see the above comment) is reseted
- * mainly by a detected high_point utterance or when we have detected a long streak of idle.
+ *    - it'll always record the first SILENCE_BREAKPOINTS events that are 
+ *    above the low_point but below the high_point (these are normally the 
+ *    trailing of a utterance).
+ *    - it'll always record if the event is well below the high_level 
+ *    (these are normally the utterances)
  *
- * The callback will split an utterance when nothing interesting has been said in the last HOT_ZONE seconds.
+ * The counter_activity (which is one of the responsible to record after all, 
+ * see the above comment) is reseted mainly by a detected high_point utterance 
+ * or when we have detected a long streak of idle.
+ *
+ * The callback will split an utterance when nothing interesting has been 
+ * said in the last HOT_ZONE seconds.
  */
 static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 {
@@ -121,7 +151,9 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
             retries++;
         } while(retval != 0 && retries < 20);
         if (retries == 20){
-            Log(LOG_ERR, "There was some nasty problems with the opening of %s file.\n", rctx->filename);
+            Log(LOG_ERR, 
+                "There was some nasty problems with the opening of %s file.\n",
+                rctx->filename);
             stop_recording(rctx);
         }
 
@@ -138,7 +170,8 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
         rctx->total_activity++;
         if (data){
             if (power >= low_point){
-                if (rctx->counter_silence < SILENCE_BREAKPOINT || power > high_point){
+                if (rctx->counter_silence < SILENCE_BREAKPOINT || 
+                    power > high_point){
 
                     rctx->counter_idle = 0;
 
@@ -161,24 +194,33 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     rctx->is_recording = true;
                     buffer(rctx, data, size);
 
-                    Log(LOG_DEBUG, "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
-                            power, low_point, high_point,rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+                    Log(LOG_DEBUG,
+                        "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        power, low_point, high_point, rctx->threshold,
+                        rctx->counter_silence, rctx->counter_idle);
                 }else{
-                    Log(LOG_DEBUG, "SS power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
-                            power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+                    Log(LOG_DEBUG,
+                        "SS power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        power, low_point, high_point, rctx->threshold,
+                        rctx->counter_silence, rctx->counter_idle);
                 }
             }else{
                 rctx->counter_idle = fmin(++rctx->counter_idle, IDLE_BREAKPOINT);
                 if (rctx->counter_idle == IDLE_BREAKPOINT)
                     rctx->counter_silence = 0;
-                Log(LOG_DEBUG, "   power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
-                        power, low_point, high_point, rctx->threshold, rctx->counter_silence, rctx->counter_idle);
+                Log(LOG_DEBUG,
+                    "   power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        power, low_point, high_point, rctx->threshold,
+                        rctx->counter_silence, rctx->counter_idle);
             }
             pa_stream_drop(stream);
         }
     }
 }
 
+/*
+ * Set the threshold in the recorder_context structure.
+ */
 static void detect_threshold_cb(pa_stream *stream, size_t length, void *userdata)
 {
     const void *data;
@@ -203,6 +245,9 @@ static void detect_threshold_cb(pa_stream *stream, size_t length, void *userdata
     rctx->threshold = sqrt(acc_sqsum / acc_size);
 }
 
+/*
+ * Initialize pulseAudio
+ */
 static int init_pa(recorder_context_t *rctx)
 {
     pa_mainloop_api *pa_mlapi;
@@ -212,7 +257,8 @@ static int init_pa(recorder_context_t *rctx)
 
     rctx->pa_ml = pa_mainloop_new();
     pa_mlapi = pa_mainloop_get_api(rctx->pa_ml);
-    rctx->pa_ctx = pa_context_new_with_proplist(pa_mlapi, "NoApp recorder", ctx_properties);
+    rctx->pa_ctx = pa_context_new_with_proplist(pa_mlapi, 
+                       "NoApp recorder", ctx_properties);
     pa_context_connect(rctx->pa_ctx, NULL, 0, NULL);
 
     pa_context_set_state_callback(rctx->pa_ctx, pa_state_cb, rctx);
@@ -224,7 +270,9 @@ static int init_pa(recorder_context_t *rctx)
         goto exit;
     }
 
-    rctx->recording_stream = pa_stream_new_with_proplist(rctx->pa_ctx, "NoApp recorder", &rctx->pa_ss, NULL, stream_properties);
+    rctx->recording_stream = pa_stream_new_with_proplist(rctx->pa_ctx,
+                                 "NoApp recorder", &rctx->pa_ss, 
+                                 NULL, stream_properties);
 
     retval = pa_stream_connect_record(rctx->recording_stream, NULL, NULL, 0);
     if (retval < 0){
@@ -236,6 +284,9 @@ exit:
     return retval;
 }
 
+/*
+ * Initialize the files used to dump the recorded data
+ */
 static int init_filenames(recorder_context_t *rctx)
 {
     int retval = 0;
@@ -262,6 +313,11 @@ static int init_filenames(recorder_context_t *rctx)
 
     return retval;
 }
+
+/* #######################
+ * # PUBLISHED INTERFACE #
+ * #######################
+ */
 
 recorder_context_t *init_recorder_context(char *filename)
 {
@@ -308,7 +364,8 @@ int start_recording(recorder_context_t *rctx)
     Log(LOG_INFO, "Calibrating threshold.\n");
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);
-    pa_stream_set_read_callback(rctx->recording_stream, detect_threshold_cb, rctx);
+    pa_stream_set_read_callback(rctx->recording_stream, 
+                                detect_threshold_cb, rctx);
     rctx->timestamp = time(NULL);
     current_time = rctx->timestamp;
 #ifdef DEBUG
@@ -318,7 +375,8 @@ int start_recording(recorder_context_t *rctx)
         pa_mainloop_iterate(rctx->pa_ml, 0, &retval);
         current_time = time(NULL);
         if (retval < 0){
-            Log(LOG_ERR, "There was a problem calculating the threshold power.\n");
+            Log(LOG_ERR,
+                "There was a problem calculating the threshold power.\n");
             goto exit;
         }
     }

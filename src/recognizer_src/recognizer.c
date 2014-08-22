@@ -98,7 +98,9 @@ int start_recognizing(recognizer_context_t *rctx)
     Log(LOG_INFO, "Filenames up and running.\n");
 
     if ((epfd = epoll_create1(0)) < 0){
-        Log(LOG_ERR, "Failed to initialize epoll with error %s.\n", strerror(errno));
+        Log(LOG_ERR,
+            "Failed to initialize epoll with error %s.\n",
+            strerror(errno));
         retval = -1;
         goto exit;
     }
@@ -107,7 +109,9 @@ int start_recognizing(recognizer_context_t *rctx)
     event.data.fd = fd_in;
     event.events = EPOLLIN;
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd_in, &event) < 0){
-        Log(LOG_ERR, "Failed to add the in file to the epoll system with error %s.\n", strerror(errno));
+        Log(LOG_ERR,
+            "Failed to add the in file to the epoll system with error %s.\n",
+            strerror(errno));
         retval = -1;
         goto exit;
     }
@@ -116,7 +120,9 @@ int start_recognizing(recognizer_context_t *rctx)
     while(1){
         nrevents = epoll_wait(epfd, events, 1, -1);
         if (nrevents < 0){
-            Log(LOG_ERR, "There was an error in the epoll's wait for the out file with error %s.\n", strerror(errno));
+            Log(LOG_ERR,
+                "There was an error in the epoll's wait for the out file with error %s.\n",
+                strerror(errno));
 
 check_retries:
             if (retries < MAX_RETRIES){
@@ -161,12 +167,15 @@ check_retries:
             continue;
         }
         if (!(events[0].events & EPOLLIN)){
-            Log(LOG_ERR, "epoll is callbacking with a different event %d.\n", events[0].events);
+            Log(LOG_ERR,
+                "epoll is callbacking with a different event %d.\n",
+                events[0].events);
             retval = -1;
             goto exit;
         }
         if (events[0].data.fd != fd_in){
-            Log(LOG_ERR, "epoll is callbacking with a different file descriptor.\n");
+            Log(LOG_ERR,
+                "epoll is callbacking with a different file descriptor.\n");
             retval = -1;
             goto exit;
         }
@@ -193,7 +202,8 @@ check_retries:
             goto exit;
         }
 
-        if ((hyp = ps_get_hyp(rctx->ps, &score, &uttid)) == NULL || (strlen(hyp) == 0)){
+        if ((hyp = ps_get_hyp(rctx->ps, &score, &uttid)) == NULL ||
+            (strlen(hyp) == 0)){
             Log(LOG_INFO, "Cannot get a hypothesis.\n");
         }else{
             fprintf(rctx->out, "%s\n", hyp);

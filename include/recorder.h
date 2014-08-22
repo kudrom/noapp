@@ -14,14 +14,13 @@
 
     #define QUIET_TIME 3
 
-    #define HIGH_BREAKPOINT 1.2
+    #define HIGH_BREAKPOINT 2
     #define LOW_BREAKPOINT 0.8
     #define SILENCE_BREAKPOINT 3
     #define IDLE_BREAKPOINT 6
-    #define HOT_ZONE 3
-    #define INTERESTING_RATIO 0.3
-    #define OUT_CAPACITY 200000
-    #define SIZE_BUFFER 200000
+    #define HOT_ZONE 1
+    #define INTERESTING_RATIO 0.2
+    #define SIZE_BUFFER 200000 // This is shared by the buffer size and the fifo capacity
 
     /*
      * Main structure of the recorder subsystem.
@@ -40,6 +39,7 @@
 
         int high_activity;
         int total_activity;
+        int old_highs;
 
         int pa_ready;
         bool mute;

@@ -74,6 +74,24 @@ static void dump(recorder_context_t *rctx)
     Log(LOG_DEBUG, "Dumped.\n");
 }
 
+static bool is_interesting(recorder_context_t *rctx)
+{
+    double metric;
+
+    metric = (2 * rctx->high_activity + rctx->old_highs) / (double) rctx->total_activity;
+
+    rctx->high_activity = 0;
+    if (metric < INTERESTING_RATIO){
+        rctx->old_highs = 0;
+        Log(LOG_INFO, "## Utterance cut. Length: %d Metric: %f Old_high: %d High: %d total: %d\n", 
+                    rctx->data_length, metric, rctx->old_highs, rctx->high_activity, rctx->total_activity);
+        return true;
+    }else{
+        rctx->old_highs += rctx->high_activity;
+        return false;
+    }
+}
+
 /*
  * The callback will record when mute isn't activated and:
  *    - it'll always record the first SILENCE_BREAKPOINTS events that are above the low_point but below the 
@@ -126,9 +144,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
 
                     current_time = time(NULL);
                     if (difftime(current_time, rctx->timestamp) >= HOT_ZONE){
-                        if ((rctx->high_activity / rctx->total_activity <= INTERESTING_RATIO)){
-                            Log(LOG_INFO, "## Utterance cut. Length: %d High: %d total: %d\n", 
-                                            rctx->data_length, rctx->high_activity, rctx->total_activity);
+                        if (is_interesting(rctx)){
                             dump(rctx);
                             rctx->high_activity = rctx->total_activity = 0;
                         }
@@ -232,7 +248,7 @@ static int init_filenames(recorder_context_t *rctx)
         return -1;
     }
     rctx->recording_file = fh;
-    set_fifo_capacity(rctx->filename, OUT_CAPACITY);
+    set_fifo_capacity(rctx->filename, SIZE_BUFFER);
 
     length_filename = generate_length_filename(rctx->filename);
     fh = open_file(length_filename, "w");

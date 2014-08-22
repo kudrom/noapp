@@ -1,6 +1,7 @@
 #ifndef RECOGNIZER_H
     #define RECOGNIZER_H
     #include <errno.h>
+    #include <stdbool.h>
     #include <sys/epoll.h>
     #include <pocketsphinx.h>
     #include "log.h"
@@ -21,6 +22,9 @@
 
         FILE *out;
         char *out_filename;
+
+        int epfd;
+        struct epoll_event events[1];
     };
     typedef struct recognizer_context recognizer_context_t;
 

@@ -170,7 +170,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
         rctx->total_activity++;
         if (data){
             if (power >= low_point){
-                if (rctx->counter_silence < SILENCE_BREAKPOINT || 
+                if (rctx->counter_silence < SILENCE_BREAKPOINT ||
                     power > high_point){
 
                     rctx->counter_idle = 0;
@@ -195,12 +195,12 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                     buffer(rctx, data, size);
 
                     Log(LOG_DEBUG,
-                        "-> power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        "-> power: %12.6f[%f, %f] threshold: %f silence: %d idle: %d\n",
                         power, low_point, high_point, rctx->threshold,
                         rctx->counter_silence, rctx->counter_idle);
                 }else{
                     Log(LOG_DEBUG,
-                        "SS power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                        "SS power: %12.6f[%f, %f] threshold: %f silence: %d idle: %d\n",
                         power, low_point, high_point, rctx->threshold,
                         rctx->counter_silence, rctx->counter_idle);
                 }
@@ -209,7 +209,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
                 if (rctx->counter_idle == IDLE_BREAKPOINT)
                     rctx->counter_silence = 0;
                 Log(LOG_DEBUG,
-                    "   power: %f[%f, %f] threshold: %f silence: %d idle: %d\n",
+                    "   power: %12.6f[%f, %f] threshold: %f silence: %d idle: %d\n",
                         power, low_point, high_point, rctx->threshold,
                         rctx->counter_silence, rctx->counter_idle);
             }

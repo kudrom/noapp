@@ -19,7 +19,7 @@
     #define SILENCE_BREAKPOINT 3
     #define IDLE_BREAKPOINT 6
     #define HOT_ZONE 1
-    #define INTERESTING_RATIO 0
+    #define INTERESTING_RATIO 0.3
 
     // This is shared by the buffer size and the fifo capacity.2
     #define SIZE_BUFFER 200000 

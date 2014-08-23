@@ -146,8 +146,8 @@ static int process_nrevents(recognizer_context_t *rctx, int nrevents)
     }
     if (rctx->events[0].events & EPOLLHUP){
         Log(LOG_INFO, "The other side of the FIFO hanged up.\n");
-        init_epoll(rctx, true);
-        check_retries = true;
+        if (init_epoll(rctx, true) < 0)
+            check_retries = true;
     }
     if (!(rctx->events[0].events & EPOLLIN)){
         Log(LOG_ERR,

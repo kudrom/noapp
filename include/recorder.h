@@ -73,7 +73,7 @@
      *  Stop recording the utterances that the user spells to the system.
      *  It must be called to free memory, it desconnects to pulseAudio.
      */
-    int stop_recording(recorder_context_t *rctx);
+    int stop_recording(recorder_context_t *rctx, bool restart);
 
     /*
      * Changes the target of the recording to the new_filename

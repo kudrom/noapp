@@ -154,7 +154,7 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
             Log(LOG_ERR, 
                 "There was some nasty problems with the opening of %s file.\n",
                 rctx->filename);
-            stop_recording(rctx);
+            stop_recording(rctx, false);
         }
 
         rctx->dirty_filename = false;
@@ -223,6 +223,8 @@ static void stream_request_cb(pa_stream *stream, size_t length, void *userdata)
  */
 static void detect_threshold_cb(pa_stream *stream, size_t length, void *userdata)
 {
+    //TODO: Calculate a dynamic threshold both when the environment has changed
+    // and when a SIGPIPE signal has been received.
     const void *data;
     size_t size = 0;
     static size_t acc_size = 0;
@@ -261,6 +263,7 @@ static int init_pa(recorder_context_t *rctx)
                        "NoApp recorder", ctx_properties);
     pa_context_connect(rctx->pa_ctx, NULL, 0, NULL);
 
+    rctx->pa_ready = 0;
     pa_context_set_state_callback(rctx->pa_ctx, pa_state_cb, rctx);
     while (rctx->pa_ready == 0){
         pa_mainloop_iterate(rctx->pa_ml, 1, NULL);
@@ -273,7 +276,6 @@ static int init_pa(recorder_context_t *rctx)
     rctx->recording_stream = pa_stream_new_with_proplist(rctx->pa_ctx,
                                  "NoApp recorder", &rctx->pa_ss, 
                                  NULL, stream_properties);
-
     retval = pa_stream_connect_record(rctx->recording_stream, NULL, NULL, 0);
     if (retval < 0){
         Log(LOG_ERR, "pa_stream_connect_playback failed\n");
@@ -347,15 +349,14 @@ int start_recording(recorder_context_t *rctx)
 
     Log(LOG_INFO, "Starting recorder.\n");
 
-    init_recorder_handles(rctx);
 
-    if ((retval = init_filenames(rctx))){
+    if ((retval = init_filenames(rctx)) < 0){
         Log(LOG_ERR, "Failed in the initialization of the recording file.\n");
         goto exit;
     }
     Log(LOG_INFO, "Filenames created.\n");
 
-    if ((retval = init_pa(rctx))){
+    if ((retval = init_pa(rctx)) < 0){
         Log(LOG_ERR, "Failed in the initializaion of pulse audio.\n");
         goto exit;
     }
@@ -364,8 +365,7 @@ int start_recording(recorder_context_t *rctx)
     Log(LOG_INFO, "Calibrating threshold.\n");
     printf("*****  ATTENTION  *****\n");
     printf("Keep quiet for the next %d seconds please.\n", QUIET_TIME);
-    pa_stream_set_read_callback(rctx->recording_stream, 
-                                detect_threshold_cb, rctx);
+    pa_stream_set_read_callback(rctx->recording_stream, detect_threshold_cb, rctx);
     rctx->timestamp = time(NULL);
     current_time = rctx->timestamp;
 #ifdef DEBUG
@@ -389,11 +389,11 @@ int start_recording(recorder_context_t *rctx)
     pa_mainloop_run(rctx->pa_ml, &retval);
 
 exit:
-    stop_recording(rctx);
+    stop_recording(rctx, false);
     return retval;
 }
 
-int stop_recording(recorder_context_t *rctx)
+int stop_recording(recorder_context_t *rctx, bool restart)
 {
     int retval = 0;
 
@@ -403,11 +403,17 @@ int stop_recording(recorder_context_t *rctx)
 #endif
     fclose(rctx->recording_file);
     fclose(rctx->length_file);
+
     pa_mainloop_quit(rctx->pa_ml, retval);
+    pa_stream_disconnect(rctx->recording_stream);
+    pa_stream_unref(rctx->recording_stream);
     pa_context_disconnect(rctx->pa_ctx);
     pa_context_unref(rctx->pa_ctx);
     pa_mainloop_free(rctx->pa_ml);
-    free(rctx);
+
+    if (!restart){
+        free(rctx);
+    }
     Log(LOG_INFO, "DONE.\n");
     return retval;
 }
@@ -450,5 +456,6 @@ int main(int argc, char*argv[])
     char *filename = argc == 1 ? "/tmp/noapp.raw" : argv[1];
     recorder_context_t *rctx;
     rctx = init_recorder_context(filename);
+    init_recorder_handles(rctx);
     return start_recording(rctx);
 }

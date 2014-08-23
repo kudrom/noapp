@@ -1,0 +1,47 @@
+{
+   PulseAudio Cond
+   Memcheck:Cond
+   ...
+   obj:/usr/lib/libpulse.so.*
+}
+{
+   PulseAudio Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:/usr/lib/libpulse.so.*
+}
+{
+   glibc
+   Memcheck:Addr4
+   ...
+   obj:/usr/lib/libc-*
+}
+{
+   libpulsecommon leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:/usr/lib/pulseaudio/libpulsecommon-*
+}
+{
+   libpulsecommon param1
+   Memcheck:Param
+   socketcall.sendto(msg)
+   ...
+   obj:/usr/lib/pulseaudio/libpulsecommon-*
+}
+{
+   libpulsecommon param2
+   Memcheck:Param
+   write(buf)
+   ...
+   obj:/usr/lib/pulseaudio/libpulsecommon-*
+}
+{
+   libgfortran
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:/usr/lib/libgfortran.*
+}

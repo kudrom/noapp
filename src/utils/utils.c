@@ -18,6 +18,9 @@ char *generate_length_filename(char *base_filename)
     return length_filename;
 }
 
+/*
+ * The returned file handler must be freed by the caller
+ */
 FILE *open_file(char *filename, char *mode)
 {
     FILE *fh;
@@ -38,6 +41,9 @@ FILE *open_file(char *filename, char *mode)
     return fh;
 }
 
+/*
+ * Wrapper around mkfifo
+ */
 int make_fifo(char *filename, int max_size)
 {
     int retval = 0;
@@ -73,6 +79,9 @@ int make_fifo(char *filename, int max_size)
     return retval;
 }
 
+/*
+ * Private function, use the below getter/setter
+ */
 static int manage_fifo_capacity(char *filename, int command, int capacity)
 {
     FILE *fh;

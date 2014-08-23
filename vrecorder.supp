@@ -12,12 +12,6 @@
    obj:/usr/lib/libpulse.so.*
 }
 {
-   glibc
-   Memcheck:Addr4
-   ...
-   obj:/usr/lib/libc-*
-}
-{
    libpulsecommon leak
    Memcheck:Leak
    match-leak-kinds: reachable
@@ -37,11 +31,4 @@
    write(buf)
    ...
    obj:/usr/lib/pulseaudio/libpulsecommon-*
-}
-{
-   libgfortran
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   ...
-   obj:/usr/lib/libgfortran.*
 }

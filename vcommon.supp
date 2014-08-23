@@ -1,0 +1,13 @@
+{
+   glibc
+   Memcheck:Addr4
+   ...
+   obj:/usr/lib/libc-*
+}
+{
+   libgfortran
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   obj:/usr/lib/libgfortran.*
+}

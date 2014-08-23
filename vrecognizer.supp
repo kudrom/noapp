@@ -1,0 +1,21 @@
+{
+   sphinx cmd_ln_init
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   ...
+   fun:cmd_ln_init
+}
+{
+   sphinx cmd_ln_init2
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:cmd_ln_init
+}
+{
+   sphinx ps_init
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   ...
+   fun:ps_init
+}

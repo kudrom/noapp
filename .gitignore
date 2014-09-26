@@ -37,3 +37,8 @@ install-sh
 depcomp
 configure
 compile
+
+*.bak
+*.lock
+
+.idea

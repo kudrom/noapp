@@ -19,11 +19,11 @@ NoApp is built around a modular architecture composed of several modules talking
 
 Each module is an independent process that transforms its input to produce an output that is delivered to the next module as shown in the following bullet list:
 
-    1. *Audio Server*: Takes the raw analog voice as input and digitalize it to a raw/compressed data stream.
-    2. *Translator*: Takes the previous data stream and transcripts it to plain text.
-    3. *Parser/Confidence tagger*: Takes the previous plain text and syntactically/semantically parses it.
-    4. *Dialogue Manager*: Takes the previous parsed text and generates the response to the ongoing dialogue.
-    5. *Output Generator*: Takes the previous response and generates the output in accordance to the software stack of the executing application.
+    1. Audio Server: Takes the raw analog voice as input and digitalize it to a raw/compressed data stream.
+    2. Translator: Takes the previous data stream and transcripts it to plain text.
+    3. Parser/Confidence tagger: Takes the previous plain text and syntactically/semantically parses it.
+    4. Dialogue Manager: Takes the previous parsed text and generates the response to the ongoing dialogue.
+    5. Output Generator: Takes the previous response and generates the output in accordance to the software stack of the executing application.
 
 Furthermore, the modules that compose the backend are the ones present in the olympus project. However, I have chosen as the communication backbone a mix between UNIX pipelines and D-BUS [1] instead of the Galaxy framework [2]. I think that Galaxy is too complex and domain specific to enable the creation of general applications.
 
@@ -49,7 +49,7 @@ It's a thin wrapper around CMU Sphinx [4].
 
 It's main responsibility is to tag the translation of the previous module according to a base grammar provided by the framework and the optional extensions by the UI programmer. This composed grammar is the main responsible of the UX success of the system. This is Phoenix [5].
 
-Additionally this module must provide a confidence annotator of the parsed utterance. This is Hellios [6].
+Additionally this module must provide a confidence annotator of the parsed utterance. This is Helios [6].
 
 ### Dialogue Manager
 
@@ -63,7 +63,7 @@ It uses D-BUS to talk to the application.
 
 
 ## The language
-
+    The language will be an extension of QML [8] which will allow the programmer to describe the VUI in the same way that the GUI is described. This language will be declarative and an improvement of the current RavenClaw's language called RavenClaw Task Specification Language (RCTSL).
 
 # General requirements:
     1. Every component is isolated and can be changed without not too much fuss.
@@ -85,18 +85,12 @@ make
 make install
 
 # Bibliography
-[0] Olympus
-
-[1] D-bus
-
-[2] Galaxy
-
-[3] PulseAudio
-
-[4] Sphinx
-
-[5] Phoenix
-
-[6] Hellios
-
-[7] RavenClaw
+[0] Olympus http://wiki.speech.cs.cmu.edu/olympus/index.php/Olympus    
+[1] D-bus http://www.freedesktop.org/wiki/Software/dbus/   
+[2] Galaxy http://communicator.sourceforge.net/sites/MITRE/distributions/GalaxyCommunicator/docs/manual/index.html   
+[3] PulseAudio http://www.freedesktop.org/wiki/Software/PulseAudio/   
+[4] Sphinx http://cmusphinx.sourceforge.net/   
+[5] Phoenix http://wiki.speech.cs.cmu.edu/olympus/index.php/Phoenix   
+[6] Helios http://repository.cmu.edu/cgi/viewcontent.cgi?article=2420&context=compsci   
+[7] RavenClaw http://wiki.speech.cs.cmu.edu/olympus/index.php/RavenClaw   
+[8] QML http://qt-project.org/doc/qt-5/qtqml-index.html   

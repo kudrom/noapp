@@ -1,61 +1,90 @@
 NoApp
 =====
 
-The NoApp framework is 'Not only A pet project' born to understand several technologies that have amazed me during this summer. And yes, I'm joking with the name.
+The NoApp framework is 'Not only A pet project'. It was born to understand several technologies that amazed me during the 2014 summer. It allowed me to spend some weeks designing, developing, writing, thinking and dreaming about ideas. And yes, I'm joking with the name.
 
-I have been thinking about the possibility to ease certain difficult activities that the common public faces and the hypothetical help that a multi-modal interface would pose to that goal. I think that it can be funny to develop a framework that integrates the voice as a way to complement the way GUIs drive the interaction between a human and a computer.
+The goal is to develop a framework that will allow programmers to use both a GUI and a VUI (Voice User Interface) to express more advanced User Interfaces with complex interactions. With the addition of voice dialogs to the current graphical interactions I expect to enable the development of complex activities. The ultimate goal, therefore, is to build a framework to develop multimodal user interfaces.
 
-The goal is to develop a framework that will allow applications to use both a GUI and a VUI (Voice User Interface) to drive an activity.
-
-I've chosen Qt as the GUI because I like the way Mer/Nemo/SailfishOS are built around QML/C++/Wayland.
+I don't know if I am loyal to the UNIX philosophy with the solutions that I've came up with but I know that what drives me is to make impossible things possible as UNIX does. So what motivates me to develop this framework is to experiment with successful ideas that the UNIX ecosystem is built upon.
 
 
-Architecture
-===========
+General architecture
+====================
 
-The initial step is to create the required infrastructure composed of four big subsystems:
-    1) Audio Server
-    2) Translator
-    3) Parser
-    4) Dialogue Manager
+The framework is composed of:
+ 1) A general backend that handles the common tasks related to the processing of the utterances and the generation of a response according to the VUI 
+ 2) The language to express the VUI.
+
+Architecture of the backend
+===========================
+
+NoApp is built around a modular architecture composed of several modules talking to each other through a common communication system. I have used the olympus [0] project as an initial design and improved it to use current Linux oriented technologies.
+
+Each module is an independent process that transforms its input to produce an output that is delivered to the next module as shown in the following bullet list:
+    1) *Audio Server*: Takes the raw analog voice as input and digitalize it to a raw/compressed data stream.
+    2) *Translator*: Takes the previous data stream and transcripts it to plain text.
+    3) *Parser/Confidence tagger*: Takes the previous plain text and syntactically/semantically parses it.
+    4) *Dialogue Manager*: Takes the previous parsed text and generates the response to the ongoing dialogue.
+    5) *Output Generator*: Takes the previous response and generates the output in accordance to the software stack of the executing application.
+
+Furthermore, the modules that compose the backend are the ones present in the olympus project. However, I have chosen as the communication backbone a mix between UNIX pipelines and D-BUS [1] instead of the Galaxy framework [2]. I think that Galaxy is too complex and domain specific to enable the creation of general applications.
+
+The modules communicate to each other through an asynchronous data pipeline that connects the output of a module to the input of the next one as is common in the terminal ecosystem. This main pipeline only delivers the processed data of the current module to the next one. However, the backend needs more complex interactions in its normal execution, to fulfill this purpose each module publish an interface that every module can call through dbus.
+
+That way, the main interaction between modules that consists on processing its input and delivering it to the next module is treated as a first citizen to improve performance, another more sporadic interactions must be delivered with the overhead of a call through dbus.
+
+Another key difference is that with the data pipeline it's very easy to debug the entire backend because you can run in a controlled environment every module by editing directly the UNIX pipelines of the module with the standard GNU toolkit. Furthermore you can do unit tests, integration tests and functional tests easily.
 
 Audio Server
 -----------
 
 It's main responsibility is to detect and capture the utterances of the user and to send them to the Translator.
 
-It's built around PulseAudio.
+It's built around PulseAudio [3].
 
 Translator
 ---------
 
-It's main responsibility is to translate the recorded audio file and send it to the parser.
+It's main responsibility is to translate the recorded digitalized audio file and send it to the parser.
 
-It's built around CMU Sphinx.
+It's a thin wrapper around CMU Sphinx [4].
 
 Parser
 -----
 
-It's main responsibility is to tag the translation according to a certain grammar, which (by the way) is the major responsible of the UX success or failure due to the fact that it constraints/enhances the way the user transmits its desire to the machine.
+It's main responsibility is to tag the translation of the previous module according to a base grammar provided by the framework and the optional extensions by the UI programmer. This composed grammar is the main responsible of the UX success of the system. This is Phoenix [5].
+
+Additionally this module must provide a confidence annotator of the parsed utterance. This is Hellios [6].
 
 Dialogue Manager
 ---------------
 
-It's main responsibility is to find the proper handler of the proper application to the given utterance. It's the most dynamic component of the four and it should allow the user to talk to the machine, not to send it a bunch of commands. The way the DM builds dialogues will determine the way the user understands the application.
+It's main responsibility is to find the proper response to the given utterance according to the current dialogue. It must preserve a session and therefore save the state of the current interaction between the user and the system. This is the RavenClaw DM [6] improved for deployment in Linux.
+
+Output Generator
+----------------
+
+It's main responsibility is to execute the related action in the user's application to the response generated by the Dialogue Manager.
 
 It uses D-BUS to talk to the application.
 
 
-Every component is isolated and can be changed without not too much fuss.
+The language
+============
+
+
+General requirements:
+====================
+    1) Every component is isolated and can be changed without not too much fuss.
 
 Users
 =====
 
-The two main users that NoApp is built around are the developers and the final users of the apps build with NoApp.
+NoApp will satisfy the developers that want to develop multimodal UI and the users that will use that UIs.
 
-NoApp takes care of the developers offering them a way to express a dialogue that complements a certain GUI. I love the declarative style of QML and how it changes the perspective of building GUIs. I want to enhance that way of thinking by changing the way a UI is built using not only graphics but also the voice. The App side of NoApp focus on building an expressive way of writing dialogues in code.
+NoApp takes care of the developers offering them a way to express a dialogue between the user and their application. The backend should allow them to debug its application, the language should allow them to easily express their preferred interaction.
 
-NoApp takes care of the final users by allowing them to approach difficult activities in the same way that they would if they could: using more senses to gather more information that can be used to solve the initial problem. I'm a little bit angry about the fact that almost nobody uses basic security mechanisms, right now security is not usable. Maybe if we expand the User Interfaces surface, someone will come up with a new way to express how to send a dammed ciphered email that is usable.
+NoApp takes care of the final users by allowing them to approach difficult activities in the same way that they would if they could: using more senses to gather more information.
 
 
 Installation
@@ -65,3 +94,14 @@ I'm using autotools so first you should generate the configure script with ./boo
 ./configure
 make
 make install
+
+Bibliography
+===========
+[0] Olympus
+[1] D-bus
+[2] Galaxy
+[3] PulseAudio
+[4] Sphinx
+[5] Phoenix
+[5] Hellios
+[6] RavenClaw

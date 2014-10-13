@@ -63,9 +63,11 @@ It uses D-BUS to talk to the application.
 
 
 ## The language
+
     The language will be an extension of QML [8] which will allow the programmer to describe the VUI in the same way that the GUI is described. This language will be declarative and an improvement of the current RavenClaw's language called RavenClaw Task Specification Language (RCTSL).
 
 # General requirements:
+
     1. Every component is isolated and can be changed without not too much fuss.
 
 # Users

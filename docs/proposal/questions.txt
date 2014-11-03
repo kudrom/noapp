@@ -1,0 +1,108 @@
+QUESTIONS:
++ There are too many methods. Who uses them? The execution/input phases only
+  needs a subset of them. Are the agents using them? ****
+
++ What's the purpose of so many Histories spread through the code? **
+
++ What's the relationship between an Agent and its Concepts? ****
+
++ Can all DialogAgents be viewed with one interface through the core? ****
+
++ What is the concurrent model of the two threads of execution? Is the data
+  fetching asynchronous? ***
+
++ What are the core classes? ****
+
++ Is the expectation agenda is only used in concept binding? Therefore it's an
+  auxiliary class.
+
++ What's the input data format of RavenClaw? ****
+
++ How can this be made portable? **
+
++ When an implicit/explicit strategy is run, it schedules some agents
+  in the execution stack. Once they are executed, some actions need to be
+  taken to clean the added concepts that the strategy also had added. Currently
+  this actions are executed by the belief updating method. Is there any other
+  possibility? *
+
+
+
+IDEAS:
++ The system should be split in the following classes:
+
+  User
+  ------------------------------
+ | DialogTaskTree               |
+ | SpecParser                   |
+  ------------------------------
+
+  Core
+  ------------------------------
+ | MainController               |
+ | Config                       |
+ | ExecutionStack               |
+ | ExpectationAgenda            |
+ | DialogAgent                  |
+ | Concept                      |
+ | Register                     |
+  ------------------------------
+
+  ErrorHandling
+  ------------------------------
+ | ErrorController              |
+ | Policy                       |
+ | (I) ErrorStrategy            |
+ | (I) ErrorModel               |
+ | (I) BeliefUpdater            |
+  ------------------------------
+
+  Communication
+  ------------------------------
+ | (I) Gateway                  |
+ | (I) InputProvider            |
+ | (I) OutputGenerator          |
+  ------------------------------
+Where (I) means they should be Inheritable classes.
+
+The user provides a definition of the DialogTaskTree in the language of the
+SpecParser, then the MainController is called, which builds the DialogTaskTree
+and initializes the system as a whole, then the main loop starts and the 
+execution and input phases are executed endlessly.
+
+In the execution phase, the ExecutionStack retrieves the next DialogAgent and
+the chosen one is executed; if it requires input, the input phase is entered.
+When the Agent is done, the ExecutionStack is cleaned of completed DialogAgents
+and the ErrorController is called to perform error handling, finally the
+DialogAgents who have requested the focus are pushed in top of the ExecutionStack.
+
+In the input phase, the input is taken from the InputProvider which emits an
+Input object when it receives it. This Input object is binded to a concept
+and its beliefs are updated. If the concept is a dynamic one, the error handling
+process is run on that concept to update other affected concepts (see how the
+implicit/explicit misunderstanding strategies work to understand this better).
+
+The InputProvider uses a given Gateway to get the input from the user. This
+Gateway abstracts the communication system between the different modules that
+compose the NoApp/Olympus framework backend.
+
+The main points are:
+    + There are two threads, the one who gets the input synchronously with the
+      user and the one who is executing the MainController until some input
+      request is detected by the Agents.
+    + The Register is a data store of all DialogAgents.
+    + The DialogTaskTree and ExecutionStack are views of some registered
+      DialogAgents.
+    + A DialogAgent is static if it belongs to the DialogTaskTree or dynamic
+      if it's created at run time.
+    + The DialogAgents use published interfaces of mostly all classes.
+    + An App defines the DialogTaskTree and the policies of the ErrorHandling,
+      which tune an specific App execution.
+    + The user of the apps defines the Config file, which tunes RavenClaw as a
+      whole.
+    + The ErrorController decides if a misunderstanding or non-understanding
+      phase should be taken.
+    + The OutputGenerator should connect with the App to call some function on
+      them and change the state of the App.
+    + The Communication subsystem encapsulates the communication system between
+      the different modules of the NoApp/Olympus framework.

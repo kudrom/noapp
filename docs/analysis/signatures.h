@@ -1,310 +1,42 @@
-file: Agents/CoreAgents/GroundingManagerAgent.h
-    class CGroundingManagerAgent: public CAgent
+file: Agents/Registry.h
+    class CRegistry
     DATA:
-        STRING2STRING s2sPolicies;
-        STRING2FLOAT s2fConstantParameters;
-        STRING2STRING2FLOATVECTOR s2s2vfBeliefUpdatingModels;
-        STRING2STRING2FLOATVECTOR s2s2vfConceptValuesInfo;
-        STRING2STRING s2sConceptTypeInfo;
-        STRING2FLOAT s2fBeliefUpdatingFeatures;
-        vector < CGroundingAction * > vpgaActions;
-        TStringVector vsActionNames;
-        TExternalPolicies mapExternalPolicies;
-        TGroundingManagerConfiguration gmcConfig;
-        bool bTurnGroundingRequest;
-        TConceptGroundingRequests vcgrConceptGroundingRequests;
-        bool bLockedGroundingRequests;
-        vector<TGroundingActionHistoryItems> vgahiGroundingActionsHistory;
-        TGroundingModelsTypeHash gmthGroundingModelTypeRegistry;
+        TAgentsHash AgentsHash;
+        TAgentsTypeHash AgentsTypeHash;
     BEHAVIOUR:
-        CGroundingManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CGroundingManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        void SetConfiguration(string sAGroundingManagerConfiguration);
-        TGroundingManagerConfiguration GetConfiguration();
-        virtual void LoadPoliciesFromString(string sPolicies);
-        virtual void LoadPoliciesFromFile(string sFileName);
-        virtual string GetPolicy(string sModelName);
-        CExternalPolicyInterface* CreateExternalPolicyInterface(string sAHost);
-        void ReleaseExternalPolicyInterfaces();
-        virtual void LoadBeliefUpdatingModel(string sAFileName);
-        virtual void SetBeliefUpdatingModelName(string sABeliefUpdatingModelName);
-        virtual string GetBeliefUpdatingModelName();
-        virtual STRING2FLOATVECTOR& GetBeliefUpdatingModelForAction(string sSystemAction);
-        virtual float GetConstantParameter(string sParam);
-        virtual void PrecomputeBeliefUpdatingFeatures(CConcept* pIConcept, CConcept* pNewConcept, string sSystemAction);
-        virtual float GetGroundingFeature(string sFeatureName);
-        virtual string GetGroundingFeatureAsString(string sFeatureName);
-        virtual void ClearBeliefUpdatingFeatures();
-        virtual float GetPriorForConceptHyp(string sConcept, string sHyp);
-        virtual float GetConfusabilityForConceptHyp(string sConcept, string sHyp);
-        virtual string GetConceptTypeInfoForConcept(string sConcept);
-        void UseGroundingAction(string sActionName, GroundingAction* pgaAGroundingAction);
-        int GroundingActionNameToIndex(string sGroundingActionName);
-        string GroundingActionIndexToName(unsigned int iGroundingActionIndex);
-        CGroundingAction* operator[] (string sGroundingActionName);
-        CGroundingAction* operator[] (unsigned int iGroundingActionIndex);
-        void RequestTurnGrounding(bool bATurnGroundingRequest);
-        void RequestConceptGrounding(CConcept* pConcept);
-        string ScheduleConceptGrounding(CConcept* pConcept);
-        void LockConceptGroundingRequestsQueue();
-        void UnlockConceptGroundingRequestsQueue();
-        void SetConceptGroundingRequestStatus(CConcept* pConcept, int iAGroundingRequestStatus);
-        int GetConceptGroundingRequestStatus(CConcept* pConcept);
-        void ConceptGroundingRequestCompleted(CConcept* pConcept);
-        void RemoveConceptGroundingRequest(CConcept* pConcept);
-        void PurgeConceptGroundingRequestsQueue();
-        void GAHAddHistoryItem(string sGroundingModelName, string sActionName, int iGroundingActionType);
-        void GAHSetBargeInFlag(int iTurnNum, bool bBargeInFlag);
-        string GAHGetTurnGroundingAction(int iTurnNumber);
-        int GAHCountTakenInLastNTurns(bool bAlsoHeard, string sActionName, int iNumTurns);
-        int GAHCountTakenByGroundingModelInLastNTurns(bool bAlsoHeard, string sActionName, string sGroundingModelName, int iNumTurns);
-        void RegisterGroundingModelType(string sName, FCreateGroundingModel fctCreateGroundingModel);
-        CGroundingModel* CreateGroundingModel(string sModelType, string sModelPolicy);
-        bool HasPendingRequests();
-        bool HasPendingTurnGroundingRequest();
-        bool HasPendingConceptGroundingRequests();
-        bool HasUnprocessedConceptGroundingRequests();
-        bool HasScheduledConceptGroundingRequests();
-        bool HasExecutingConceptGroundingRequests();
-        bool GroundingInProgressOnConcept(CConcept* pConcept);
-        string GetScheduledGroundingActionOnConcept(CConcept* pConcept);
-        virtual void Run();
-        int getConceptGroundingRequestIndex(CConcept* pConcept);
-        string loadPolicy(string sFileName);
-
-file: Agents/CoreAgents/InteractionEventManagerAgent.h
-    class CInteractionEventManagerAgent: public CAgent
-    DATA:
-        HANDLE hNewInteractionEvent;
-        queue <CInteractionEvent*, list<CInteractionEvent*>> qpieEventQueue;
-        vector <CInteractionEvent*> vpieEventHistory;
-        CInteractionEvent *pieLastEvent;
-        CInteractionEvent *pieLastInput;
-    BEHAVIOUR:
-        CInteractionEventManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CInteractionEventManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        virtual void Initialize();
-        bool HasEvent();
-        CInteractionEvent *GetNextEvent();
-        CInteractionEvent *GetLastEvent();
-        CInteractionEvent *GetLastInput();
-        bool LastEventMatches(string sGrammarExpectation);
-        bool LastInputMatches(string sGrammarExpectation);
-        bool LastEventIsComplete();
-        float GetLastEventConfidence();
-        string GetValueForExpectation(string sGrammarExpectation);
-        void WaitForEvent();
-        void SignalInteractionEventArrived();
-
-file: Agents/CoreAgents/DMCoreAgent.h
-    class CDMCoreAgent: public CAgent
-        friend class CGroundingManagerAgent;
-        friend class CStateManagerAgent;
-    DATA:
-        TExecutionStack esExecutionStack;
-        CExecutionHistory ehExecutionHistory;
-        TBindingHistory bhBindingHistory;
-        TExpectationAgenda eaAgenda;
-        TFocusClaimsList fclFocusClaims;
-        TSystemAction saSystemAction;
-        int iTimeoutPeriod;
-        int iDefaultTimeoutPeriod;
-        float fNonunderstandingThreshold;
-        float fDefaultNonunderstandingThreshold;
-        STRING2BFF s2bffFilters;
-        bool bFocusClaimsPhaseFlag;
-        bool bAgendaModifiedFlag;
-        TFloorStatus fsFloorStatus;
-        int iTurnNumber;
-        TCustomStartOverFunct csoStartOverFunct;
-    BEHAVIOUR:
-        CDMCoreAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CDMCoreAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        void Execute();
-        void AcquireNextEvent();
-        void RegisterBindingFilter(string sBindingFilterName, TBindingFilterFunct bffFilter);
-        int GetIntSessionID();
-        void SetTimeoutPeriod(int iATimeoutPeriod);
-        int GetTimeoutPeriod();
-        void SetDefaultTimeoutPeriod(int iADefaultTimeoutPeriod);
-        int GetDefaultTimeoutPeriod();
-        void SetNonunderstandingThreshold(float fANonunderstandingThreshold);
-        float GetNonunderstandingThreshold();
-        void SetDefaultNonunderstandingThreshold(float fANonuThreshold);
-        float GetDefaultNonunderstandingThreshold();
-        void SignalFocusClaimsPhase(bool bAFocusClaimsPhaseFlag);
-        void SetFloorStatus(TFloorStatus fsaFloorStatus);
-        TFloorStatus GetFloorStatus();
-        void CDMCoreAgent::SetFloorStatus(string sAFloorStatus);
-        string FloorStatusToString(TFloorStatus fsAFloor);
-        TFloorStatus StringToFloorStatus(string sAFloor);
-        int LastTurnGetConceptsBound();
-        bool LastTurnNonUnderstanding();
-        int GetNumberNonUnderstandings();
-        int GetTotalNumberNonUnderstandings();
-        void ContinueWith(CAgent* paPusher, CDialogAgent* pdaDialogAgent);
-        void RestartTopic(CDialogAgent* pdaDialogAgent);
-        void RegisterCustomStartOver(TCustomStartOverFunct csoAStartOverFunct);
-        void StartOver();
-        CDialogAgent* GetAgentInFocus();
-        CDialogAgent* GetDTSAgentInFocus();
-        bool AgentIsInFocus(CDialogAgent* pdaDialogAgent);
-        CDialogAgent* GetAgentPreviouslyInFocus(CDialogAgent* pdaDialogAgent);
-        CDialogAgent* GetDTSAgentPreviouslyInFocus( CDialogAgent* pdaDialogAgent);
-        CDialogAgent* GetCurrentMainTopicAgent();
-        bool AgentIsActive(CDialogAgent* pdaDialogAgent);
-        void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
-        void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
-        void PopGroundingAgentsFromExecutionStack();
-        int GetBindingHistorySize();
-        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
-        int GetLastInputTurnNumber();
-        TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
-        void SignalExplicitConfirmOnConcept(CConcept* pConcept);
-        void SignalImplicitConfirmOnConcept(CConcept* pConcept);
-        void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
-        void SignalAcceptOnConcept(CConcept* pConcept);
-        int popCompletedFromExecutionStack();
-        void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
-        void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
-        void popGroundingAgentsFromExecutionStack(TStringVector& rvsAgentsEliminated);
-        void dumpConcepts();
-        void dumpExecutionStack();
-        string executionStackToString();
-        string executionStackToString(TExecutionStack es);
-        void clearCurrentSystemAction();
-        void computeCurrentSystemAction();
-        string systemActionToString(TSystemAction saASystemAction);
-        string currentSystemActionToString();
-        void assembleExpectationAgenda();
-        void compileExpectationAgenda();
-        void enforceBindingPolicies();
-        void broadcastExpectationAgenda();
-        string expectationAgendaToString();
-        string expectationAgendaToBroadcastString();
-        string expectationAgendaToBroadcastString(TExpectationAgenda eaBAgenda);
-        string bindingsDescrToString(TBindingsDescr& rbdBindings);
-        void updateInputLineConfiguration();
-        int assembleFocusClaims();
-        void bindConcepts(TBindingsDescr& rbdBindings);
-        void performConceptBinding(string sSlotName, string sSlotValue, float fConfidence, int iExpectationIndex, bool bIsComplete);
-        void performCustomConceptBinding(int iExpectationIndex);
-        void performForcedConceptUpdates(TBindingsDescr& rbdBindings);
-        void processNonUnderstanding();
-        void resolveFocusShift();
-        void rollBackDialogState(int iState);
-
-file: Agents/CoreAgents/StateManagerAgent.h
-    class CStateManagerAgent : public CAgent
-    DATA:
-        STRING2STRING s2sDialogStateNames;
-        vector<TDialogState, allocator<TDialogState>> vStateHistory;
-        string sStateBroadcastAddress;
-    BEHAVIOUR:
-        CStateManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CStateManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        void LoadDialogStateNames(string sFileName);
-        void SetStateBroadcastAddress(string sAStateBroadcastAddress);
-        void BroadcastState();
-        void UpdateState();
-        string GetStateAsString(TDialogState dsState);
-        string GetStateAsString();
-        int GetStateHistoryLength();
-        TDialogState &GetLastState();
-        TDialogState &operator[](unsigned int i);
-
-file: Agents/CoreAgents/TrafficManagerAgent.h
-    class CTrafficManagerAgent : public CAgent
-    BEHAVIOUR:
-        CTrafficManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CTrafficManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        void Call(CDialogAgent* pCallerAgent, string sCall);
-        void galaxyCall(TExternalCallSpec ecsCall);
-        void oaaCall(TExternalCallSpec ecsCall);
-
-file: Agents/CoreAgents/OutputManagerAgent.h
-    class COutputHistory
-    DATA:
-        vector<string> vsUtterances;
-        vector<COutput*> vopOutputs;
-        unsigned int uiCurrentID;
-    BEHAVIOUR:
-        COutputHistory();
-        virtual ~COutputHistory();
-        string ToString();
-        unsigned int AddOutput(COutput* pOutput, string sUtterance);
+        CRegistry();
         void Clear();
-        unsigned int GetSize();
-        string GetUtteranceAt(unsigned int iIndex);
-        COutput* GetOutputAt(unsigned int iIndex);
-        COutput* operator[](unsigned int iIndex);
+        void RegisterAgent(string sAgentName, CAgent* pAgent);
+        void UnRegisterAgent(string sAgentName);
+        bool IsRegisteredAgent(string sAgentName);
+        CAgent* operator[](string sAgentName);
+        void RegisterAgentType(string sAgentTypeName, FCreateAgent fctCreateAgent);
+        void UnRegisterAgentType(string sAgentTypeName);
+        bool IsRegisteredAgentType(string sAgentType);
+        CAgent* CreateAgent(string sAgentTypeName, string sAgentName, string sAgentConfiguration);
 
-    class COutputManagerAgent : public CAgent
+file: Agents/Agent.h
+    class CAgent
     DATA:
-        COutputHistory ohHistory;
-        vector <TOutputDevice> vodOutputDevices;
-        unsigned int iDefaultOutputDevice;
-        vector <COutput *> vopRecentOutputs;
-        int iOutputCounter;
-        CRITICAL_SECTION csCriticalSection;
-        string sOutputClass;
+        string sName;
+        string sType;
+        STRING2STRING s2sConfiguration;
     BEHAVIOUR:
-        COutputManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~COutputManagerAgent();
+        CAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CAgent();
         static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        string GetName();
+        string GetType();
+        void SetConfiguration(string sConfiguration);
+        void SetConfiguration(STRING2STRING s2sAConfiguration);
+        void SetParameter(string sParam, string sValue);
+        bool HasParameter(string sParam);
+        string GetParameterValue(string sParam);
+        virtual void Register();
+        virtual void UnRegister();
+        virtual void Create();
+        virtual void Initialize();
         virtual void Reset();
-        void SetOutputClass(string sAOutputClass);
-        bool RegisterOutputDevice(string sName, string sServerCall, int iParams);
-        void SetDefaultOutputDevice(string sName);
-        TOutputDevice *GetOutputDevice(string sName);
-        TOutputDevice *GetDefaultOutputDevice();
-        string GetDefaultOutputDeviceName();
-        vector<COutput*> Output(CDialogAgent* pGeneratorAgent, string sPrompts, TFloorStatus fsFinalFloorStatus);
-        void Repeat();
-        void Notify(int iOutputId, int iBargeinPos, string sConveyance, string sTaggedUtt);
-        void PreliminaryNotify(int iOutputId, string sTaggedUtt);
-        void CancelConceptNotificationRequest(CConcept* pConcept);
-        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
-        string GetPromptsWaitingForNotification();
-        string output(COutput* pOutput);
-        unsigned int getRecentOutputIndex(int iConceptId);
-
-file: Agents/CoreAgents/DTTManagerAgent.h
-    class CDTTManagerAgent: public CAgent
-    DATA:
-        CDialogAgent* pdaDialogTaskRoot;
-        vector<TDiscourseAgentInfo, allocator<TDiscourseAgentInfo>> vdaiDAInfo;
-    BEHAVIOUR:
-        CDTTManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CDTTManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration);
-        void CreateDialogTree();
-        void DestroyDialogTree();
-        void ReCreateDialogTree();
-        void CreateDialogTaskTree();
-        void CreateDialogTaskAgentome();
-        CDialogAgent* GetDialogTaskTreeRoot();
-        void MountAgent(CDialogAgent* pdaWhere, CDialogAgent* pdaWho, TMountingMethod mmHow, string sDynamicAgentID);
-        CDialogAgent* MountAgent(CDialogAgent* pWhere, string sAgentType, string sAgentName, string sAConfiguration, TMountingMethod mmHow, string sDynamicAgentID);
-        void UnMountAgent(CDialogAgent* pdaWho);
-        void MountAgentsFromArrayConcept(CDialogAgent *pdaParent, string sArrayConceptName, string sAgentsType, string sAgentsName, string sAgentsConceptName, string sAgentsDynamicID);
-        string GetParentName(string sAgentPath);
-        bool IsParentOf(string sParentAgentPath, string sAgentPath);
-        bool IsChildOf(string sChildAgentPath, string sAgentPath);
-        bool IsAncestorOf(string sAncestorAgentPath, string sAgentPath);
-        bool IsAncestorOrEqualOf(string sAncestorAgentPath, string sAgentPath);
-        bool IsDescendantOf(string sDescendantAgentPath, string sAgentPath);
-        bool IsSiblingOf(string sAgent1Path, string sAgent2Path);
 
 file: Agents/DialogAgents/DialogAgent.h
     class CDialogAgent : public CAgent
@@ -620,126 +352,209 @@ file: Concepts/Concept.h
         virtual void DeleteAt(unsigned int iIndex);
         virtual void InsertAt(unsigned int iIndex, CConcept &rAConcept);
 
-file: Agents/Registry.h
-    class CRegistry
+file: Agents/CoreAgents/DMCoreAgent.h
+    class CDMCoreAgent: public CAgent
+        friend class CGroundingManagerAgent;
+        friend class CStateManagerAgent;
     DATA:
-        TAgentsHash AgentsHash;
-        TAgentsTypeHash AgentsTypeHash;
+        TExecutionStack esExecutionStack;
+        CExecutionHistory ehExecutionHistory;
+        TBindingHistory bhBindingHistory;
+        TExpectationAgenda eaAgenda;
+        TFocusClaimsList fclFocusClaims;
+        TSystemAction saSystemAction;
+        int iTimeoutPeriod;
+        int iDefaultTimeoutPeriod;
+        float fNonunderstandingThreshold;
+        float fDefaultNonunderstandingThreshold;
+        STRING2BFF s2bffFilters;
+        bool bFocusClaimsPhaseFlag;
+        bool bAgendaModifiedFlag;
+        TFloorStatus fsFloorStatus;
+        int iTurnNumber;
+        TCustomStartOverFunct csoStartOverFunct;
     BEHAVIOUR:
-        CRegistry();
-        void Clear();
-        void RegisterAgent(string sAgentName, CAgent* pAgent);
-        void UnRegisterAgent(string sAgentName);
-        bool IsRegisteredAgent(string sAgentName);
-        CAgent* operator[](string sAgentName);
-        void RegisterAgentType(string sAgentTypeName, FCreateAgent fctCreateAgent);
-        void UnRegisterAgentType(string sAgentTypeName);
-        bool IsRegisteredAgentType(string sAgentType);
-        CAgent* CreateAgent(string sAgentTypeName, string sAgentName, string sAgentConfiguration);
-
-file: Agents/Agent.h
-    class CAgent
-    DATA:
-        string sName;
-        string sType;
-        STRING2STRING s2sConfiguration;
-    BEHAVIOUR:
-        CAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CAgent();
+        CDMCoreAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CDMCoreAgent();
         static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        string GetName();
-        string GetType();
-        void SetConfiguration(string sConfiguration);
-        void SetConfiguration(STRING2STRING s2sAConfiguration);
-        void SetParameter(string sParam, string sValue);
-        bool HasParameter(string sParam);
-        string GetParameterValue(string sParam);
-        virtual void Register();
-        virtual void UnRegister();
-        virtual void Create();
-        virtual void Initialize();
         virtual void Reset();
+        void Execute();
+        void AcquireNextEvent();
+        void RegisterBindingFilter(string sBindingFilterName, TBindingFilterFunct bffFilter);
+        int GetIntSessionID();
+        void SetTimeoutPeriod(int iATimeoutPeriod);
+        int GetTimeoutPeriod();
+        void SetDefaultTimeoutPeriod(int iADefaultTimeoutPeriod);
+        int GetDefaultTimeoutPeriod();
+        void SetNonunderstandingThreshold(float fANonunderstandingThreshold);
+        float GetNonunderstandingThreshold();
+        void SetDefaultNonunderstandingThreshold(float fANonuThreshold);
+        float GetDefaultNonunderstandingThreshold();
+        void SignalFocusClaimsPhase(bool bAFocusClaimsPhaseFlag);
+        void SetFloorStatus(TFloorStatus fsaFloorStatus);
+        TFloorStatus GetFloorStatus();
+        void CDMCoreAgent::SetFloorStatus(string sAFloorStatus);
+        string FloorStatusToString(TFloorStatus fsAFloor);
+        TFloorStatus StringToFloorStatus(string sAFloor);
+        int LastTurnGetConceptsBound();
+        bool LastTurnNonUnderstanding();
+        int GetNumberNonUnderstandings();
+        int GetTotalNumberNonUnderstandings();
+        void ContinueWith(CAgent* paPusher, CDialogAgent* pdaDialogAgent);
+        void RestartTopic(CDialogAgent* pdaDialogAgent);
+        void RegisterCustomStartOver(TCustomStartOverFunct csoAStartOverFunct);
+        void StartOver();
+        CDialogAgent* GetAgentInFocus();
+        CDialogAgent* GetDTSAgentInFocus();
+        bool AgentIsInFocus(CDialogAgent* pdaDialogAgent);
+        CDialogAgent* GetAgentPreviouslyInFocus(CDialogAgent* pdaDialogAgent);
+        CDialogAgent* GetDTSAgentPreviouslyInFocus( CDialogAgent* pdaDialogAgent);
+        CDialogAgent* GetCurrentMainTopicAgent();
+        bool AgentIsActive(CDialogAgent* pdaDialogAgent);
+        void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
+        void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
+        void PopGroundingAgentsFromExecutionStack();
+        int GetBindingHistorySize();
+        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
+        int GetLastInputTurnNumber();
+        TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
+        void SignalExplicitConfirmOnConcept(CConcept* pConcept);
+        void SignalImplicitConfirmOnConcept(CConcept* pConcept);
+        void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
+        void SignalAcceptOnConcept(CConcept* pConcept);
+        int popCompletedFromExecutionStack();
+        void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
+        void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
+        void popGroundingAgentsFromExecutionStack(TStringVector& rvsAgentsEliminated);
+        void dumpConcepts();
+        void dumpExecutionStack();
+        string executionStackToString();
+        string executionStackToString(TExecutionStack es);
+        void clearCurrentSystemAction();
+        void computeCurrentSystemAction();
+        string systemActionToString(TSystemAction saASystemAction);
+        string currentSystemActionToString();
+        void assembleExpectationAgenda();
+        void compileExpectationAgenda();
+        void enforceBindingPolicies();
+        void broadcastExpectationAgenda();
+        string expectationAgendaToString();
+        string expectationAgendaToBroadcastString();
+        string expectationAgendaToBroadcastString(TExpectationAgenda eaBAgenda);
+        string bindingsDescrToString(TBindingsDescr& rbdBindings);
+        void updateInputLineConfiguration();
+        int assembleFocusClaims();
+        void bindConcepts(TBindingsDescr& rbdBindings);
+        void performConceptBinding(string sSlotName, string sSlotValue, float fConfidence, int iExpectationIndex, bool bIsComplete);
+        void performCustomConceptBinding(int iExpectationIndex);
+        void performForcedConceptUpdates(TBindingsDescr& rbdBindings);
+        void processNonUnderstanding();
+        void resolveFocusShift();
+        void rollBackDialogState(int iState);
 
-file: Events/GalaxyInteractionEvent.h
-    class CGalaxyInteractionEvent: public CInteractionEvent
+file: Agents/CoreAgents/DTTManagerAgent.h
+    class CDTTManagerAgent: public CAgent
     DATA:
-        void  *gfEvent;
+        CDialogAgent* pdaDialogTaskRoot;
+        vector<TDiscourseAgentInfo, allocator<TDiscourseAgentInfo>> vdaiDAInfo;
     BEHAVIOUR:
-        CGalaxyInteractionEvent();
-        CGalaxyInteractionEvent(void *gfAEvent);
-        ~CGalaxyInteractionEvent();
-        void *GetEventFrame();
+        CDTTManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CDTTManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        virtual void Reset();
+        void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration);
+        void CreateDialogTree();
+        void DestroyDialogTree();
+        void ReCreateDialogTree();
+        void CreateDialogTaskTree();
+        void CreateDialogTaskAgentome();
+        CDialogAgent* GetDialogTaskTreeRoot();
+        void MountAgent(CDialogAgent* pdaWhere, CDialogAgent* pdaWho, TMountingMethod mmHow, string sDynamicAgentID);
+        CDialogAgent* MountAgent(CDialogAgent* pWhere, string sAgentType, string sAgentName, string sAConfiguration, TMountingMethod mmHow, string sDynamicAgentID);
+        void UnMountAgent(CDialogAgent* pdaWho);
+        void MountAgentsFromArrayConcept(CDialogAgent *pdaParent, string sArrayConceptName, string sAgentsType, string sAgentsName, string sAgentsConceptName, string sAgentsDynamicID);
+        string GetParentName(string sAgentPath);
+        bool IsParentOf(string sParentAgentPath, string sAgentPath);
+        bool IsChildOf(string sChildAgentPath, string sAgentPath);
+        bool IsAncestorOf(string sAncestorAgentPath, string sAgentPath);
+        bool IsAncestorOrEqualOf(string sAncestorAgentPath, string sAgentPath);
+        bool IsDescendantOf(string sDescendantAgentPath, string sAgentPath);
+        bool IsSiblingOf(string sAgent1Path, string sAgent2Path);
 
-    class CInteractionEvent
+file: Agents/CoreAgents/GroundingManagerAgent.h
+    class CGroundingManagerAgent: public CAgent
     DATA:
-        string sType;
-        int iID;
-        bool bComplete;
-        float fConfidence;
-        STRING2STRING s2sProperties;
+        STRING2STRING s2sPolicies;
+        STRING2FLOAT s2fConstantParameters;
+        STRING2STRING2FLOATVECTOR s2s2vfBeliefUpdatingModels;
+        STRING2STRING2FLOATVECTOR s2s2vfConceptValuesInfo;
+        STRING2STRING s2sConceptTypeInfo;
+        STRING2FLOAT s2fBeliefUpdatingFeatures;
+        vector < CGroundingAction * > vpgaActions;
+        TStringVector vsActionNames;
+        TExternalPolicies mapExternalPolicies;
+        TGroundingManagerConfiguration gmcConfig;
+        bool bTurnGroundingRequest;
+        TConceptGroundingRequests vcgrConceptGroundingRequests;
+        bool bLockedGroundingRequests;
+        vector<TGroundingActionHistoryItems> vgahiGroundingActionsHistory;
+        TGroundingModelsTypeHash gmthGroundingModelTypeRegistry;
     BEHAVIOUR:
-        CInteractionEvent();
-        CInteractionEvent(string sAType);
-        virtual ~CInteractionEvent();
-        string GetType();
-        int GetID();
-        bool IsComplete();
-        float GetConfidence();
-        string GetStringProperty(string sSlot);
-        int GetIntProperty(string sSlot);
-        float GetFloatProperty(string sSlot);
-        bool HasProperty(string sSlot);
-        void SetProperty(string sSlot, string sValue);
-        STRING2STRING &GetProperties();
-        string ToString();
-        bool Matches(string sGrammarExpectation);
-        string GetValueForExpectation(string sGrammarExpectation);
-        bool matchesSlot( string slot, string pattern);
-
-file: Outputs/Output.h
-    class COutput
-        friend class COutputHistory;
-        friend class COutputManagerAgent;
-    DATA:
-        string sGeneratorAgentName;
-        int iOutputId;
-        int iExecutionIndex;
-        string sDialogState;
-        string sAct;
-        string sObject;
-        vector<CConcept *> vcpConcepts;
-        vector<bool> vbNotifyConcept;
-        vector<string> vsFlags;
-        string sOutputDeviceName;
-        TConveyance cConveyance;
-        int iRepeatCounter;
-        TFloorStatus fsFinalFloorStatus;
-    BEHAVIOUR:
-        COutput();
-        virtual ~COutput();
-        virtual bool Create(string sAGeneratorAgentName, int iAExecutionIndex, string sAPrompt, TFloorStatus fsAFloor, int iAOutputId) = 0;
-        virtual string ToString() = 0;
-        virtual COutput* Clone(int iNewOutputId) = 0;
-        string GetGeneratorAgentName();
-        int GetDialogStateIndex();
-        void SetDialogStateIndex(int iAExecutionIndex);
-        string GetDialogState();
-        void SetDialogState(string sADialogState);
-        void SetConveyance(TConveyance cAConveyance);
-        TConveyance GetConveyance();
-        void SetAct(string sAAct);
-        string GetAct();
-        void SetFinalFloorStatus(TFloorStatus fsAFloor);
-        TFloorStatus GetFinalFloorStatus();
-        string GetFinalFloorStatusLabel();
-        bool CheckFlag(string sFlag);
-        void NotifyConceptConveyance(string sConceptName, TConveyance cAConveyance);
-        virtual CConcept* GetConceptByName(string sConceptName);
-        void CancelConceptNotificationRequest(CConcept* pConcept);
-        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
-        int GetRepeatCounter();
-        void IncrementRepeatCounter();
-        virtual void clone(COutput* pOutput, int iNewOutputId);
+        CGroundingManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CGroundingManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        void SetConfiguration(string sAGroundingManagerConfiguration);
+        TGroundingManagerConfiguration GetConfiguration();
+        virtual void LoadPoliciesFromString(string sPolicies);
+        virtual void LoadPoliciesFromFile(string sFileName);
+        virtual string GetPolicy(string sModelName);
+        CExternalPolicyInterface* CreateExternalPolicyInterface(string sAHost);
+        void ReleaseExternalPolicyInterfaces();
+        virtual void LoadBeliefUpdatingModel(string sAFileName);
+        virtual void SetBeliefUpdatingModelName(string sABeliefUpdatingModelName);
+        virtual string GetBeliefUpdatingModelName();
+        virtual STRING2FLOATVECTOR& GetBeliefUpdatingModelForAction(string sSystemAction);
+        virtual float GetConstantParameter(string sParam);
+        virtual void PrecomputeBeliefUpdatingFeatures(CConcept* pIConcept, CConcept* pNewConcept, string sSystemAction);
+        virtual float GetGroundingFeature(string sFeatureName);
+        virtual string GetGroundingFeatureAsString(string sFeatureName);
+        virtual void ClearBeliefUpdatingFeatures();
+        virtual float GetPriorForConceptHyp(string sConcept, string sHyp);
+        virtual float GetConfusabilityForConceptHyp(string sConcept, string sHyp);
+        virtual string GetConceptTypeInfoForConcept(string sConcept);
+        void UseGroundingAction(string sActionName, GroundingAction* pgaAGroundingAction);
+        int GroundingActionNameToIndex(string sGroundingActionName);
+        string GroundingActionIndexToName(unsigned int iGroundingActionIndex);
+        CGroundingAction* operator[] (string sGroundingActionName);
+        CGroundingAction* operator[] (unsigned int iGroundingActionIndex);
+        void RequestTurnGrounding(bool bATurnGroundingRequest);
+        void RequestConceptGrounding(CConcept* pConcept);
+        string ScheduleConceptGrounding(CConcept* pConcept);
+        void LockConceptGroundingRequestsQueue();
+        void UnlockConceptGroundingRequestsQueue();
+        void SetConceptGroundingRequestStatus(CConcept* pConcept, int iAGroundingRequestStatus);
+        int GetConceptGroundingRequestStatus(CConcept* pConcept);
+        void ConceptGroundingRequestCompleted(CConcept* pConcept);
+        void RemoveConceptGroundingRequest(CConcept* pConcept);
+        void PurgeConceptGroundingRequestsQueue();
+        void GAHAddHistoryItem(string sGroundingModelName, string sActionName, int iGroundingActionType);
+        void GAHSetBargeInFlag(int iTurnNum, bool bBargeInFlag);
+        string GAHGetTurnGroundingAction(int iTurnNumber);
+        int GAHCountTakenInLastNTurns(bool bAlsoHeard, string sActionName, int iNumTurns);
+        int GAHCountTakenByGroundingModelInLastNTurns(bool bAlsoHeard, string sActionName, string sGroundingModelName, int iNumTurns);
+        void RegisterGroundingModelType(string sName, FCreateGroundingModel fctCreateGroundingModel);
+        CGroundingModel* CreateGroundingModel(string sModelType, string sModelPolicy);
+        bool HasPendingRequests();
+        bool HasPendingTurnGroundingRequest();
+        bool HasPendingConceptGroundingRequests();
+        bool HasUnprocessedConceptGroundingRequests();
+        bool HasScheduledConceptGroundingRequests();
+        bool HasExecutingConceptGroundingRequests();
+        bool GroundingInProgressOnConcept(CConcept* pConcept);
+        string GetScheduledGroundingActionOnConcept(CConcept* pConcept);
+        virtual void Run();
+        int getConceptGroundingRequestIndex(CConcept* pConcept);
+        string loadPolicy(string sFileName);
 
 file: Grounding/GroundingModels/GroundingModel.h
     class CGroundingModel
@@ -825,3 +640,188 @@ file: Grounding/GroundingUtils.h
         int GetEpsilonGreedyEvent(float fEpsilon);
         int GetSoftMaxEvent(float fTemperature);
         int GetRandomlyDrawnEvent();
+
+file: Agents/CoreAgents/StateManagerAgent.h
+    class CStateManagerAgent : public CAgent
+    DATA:
+        STRING2STRING s2sDialogStateNames;
+        vector<TDialogState, allocator<TDialogState>> vStateHistory;
+        string sStateBroadcastAddress;
+    BEHAVIOUR:
+        CStateManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CStateManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        virtual void Reset();
+        void LoadDialogStateNames(string sFileName);
+        void SetStateBroadcastAddress(string sAStateBroadcastAddress);
+        void BroadcastState();
+        void UpdateState();
+        string GetStateAsString(TDialogState dsState);
+        string GetStateAsString();
+        int GetStateHistoryLength();
+        TDialogState &GetLastState();
+        TDialogState &operator[](unsigned int i);
+
+file: Agents/CoreAgents/InteractionEventManagerAgent.h
+    class CInteractionEventManagerAgent: public CAgent
+    DATA:
+        HANDLE hNewInteractionEvent;
+        queue <CInteractionEvent*, list<CInteractionEvent*>> qpieEventQueue;
+        vector <CInteractionEvent*> vpieEventHistory;
+        CInteractionEvent *pieLastEvent;
+        CInteractionEvent *pieLastInput;
+    BEHAVIOUR:
+        CInteractionEventManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CInteractionEventManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        virtual void Reset();
+        virtual void Initialize();
+        bool HasEvent();
+        CInteractionEvent *GetNextEvent();
+        CInteractionEvent *GetLastEvent();
+        CInteractionEvent *GetLastInput();
+        bool LastEventMatches(string sGrammarExpectation);
+        bool LastInputMatches(string sGrammarExpectation);
+        bool LastEventIsComplete();
+        float GetLastEventConfidence();
+        string GetValueForExpectation(string sGrammarExpectation);
+        void WaitForEvent();
+        void SignalInteractionEventArrived();
+
+file: Events/GalaxyInteractionEvent.h
+    class CGalaxyInteractionEvent: public CInteractionEvent
+    DATA:
+        void  *gfEvent;
+    BEHAVIOUR:
+        CGalaxyInteractionEvent();
+        CGalaxyInteractionEvent(void *gfAEvent);
+        ~CGalaxyInteractionEvent();
+        void *GetEventFrame();
+
+    class CInteractionEvent
+    DATA:
+        string sType;
+        int iID;
+        bool bComplete;
+        float fConfidence;
+        STRING2STRING s2sProperties;
+    BEHAVIOUR:
+        CInteractionEvent();
+        CInteractionEvent(string sAType);
+        virtual ~CInteractionEvent();
+        string GetType();
+        int GetID();
+        bool IsComplete();
+        float GetConfidence();
+        string GetStringProperty(string sSlot);
+        int GetIntProperty(string sSlot);
+        float GetFloatProperty(string sSlot);
+        bool HasProperty(string sSlot);
+        void SetProperty(string sSlot, string sValue);
+        STRING2STRING &GetProperties();
+        string ToString();
+        bool Matches(string sGrammarExpectation);
+        string GetValueForExpectation(string sGrammarExpectation);
+        bool matchesSlot( string slot, string pattern);
+
+file: Agents/CoreAgents/OutputManagerAgent.h
+    class COutputHistory
+    DATA:
+        vector<string> vsUtterances;
+        vector<COutput*> vopOutputs;
+        unsigned int uiCurrentID;
+    BEHAVIOUR:
+        COutputHistory();
+        virtual ~COutputHistory();
+        string ToString();
+        unsigned int AddOutput(COutput* pOutput, string sUtterance);
+        void Clear();
+        unsigned int GetSize();
+        string GetUtteranceAt(unsigned int iIndex);
+        COutput* GetOutputAt(unsigned int iIndex);
+        COutput* operator[](unsigned int iIndex);
+
+    class COutputManagerAgent : public CAgent
+    DATA:
+        COutputHistory ohHistory;
+        vector <TOutputDevice> vodOutputDevices;
+        unsigned int iDefaultOutputDevice;
+        vector <COutput *> vopRecentOutputs;
+        int iOutputCounter;
+        CRITICAL_SECTION csCriticalSection;
+        string sOutputClass;
+    BEHAVIOUR:
+        COutputManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~COutputManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        virtual void Reset();
+        void SetOutputClass(string sAOutputClass);
+        bool RegisterOutputDevice(string sName, string sServerCall, int iParams);
+        void SetDefaultOutputDevice(string sName);
+        TOutputDevice *GetOutputDevice(string sName);
+        TOutputDevice *GetDefaultOutputDevice();
+        string GetDefaultOutputDeviceName();
+        vector<COutput*> Output(CDialogAgent* pGeneratorAgent, string sPrompts, TFloorStatus fsFinalFloorStatus);
+        void Repeat();
+        void Notify(int iOutputId, int iBargeinPos, string sConveyance, string sTaggedUtt);
+        void PreliminaryNotify(int iOutputId, string sTaggedUtt);
+        void CancelConceptNotificationRequest(CConcept* pConcept);
+        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
+        string GetPromptsWaitingForNotification();
+        string output(COutput* pOutput);
+        unsigned int getRecentOutputIndex(int iConceptId);
+
+file: Outputs/Output.h
+    class COutput
+        friend class COutputHistory;
+        friend class COutputManagerAgent;
+    DATA:
+        string sGeneratorAgentName;
+        int iOutputId;
+        int iExecutionIndex;
+        string sDialogState;
+        string sAct;
+        string sObject;
+        vector<CConcept *> vcpConcepts;
+        vector<bool> vbNotifyConcept;
+        vector<string> vsFlags;
+        string sOutputDeviceName;
+        TConveyance cConveyance;
+        int iRepeatCounter;
+        TFloorStatus fsFinalFloorStatus;
+    BEHAVIOUR:
+        COutput();
+        virtual ~COutput();
+        virtual bool Create(string sAGeneratorAgentName, int iAExecutionIndex, string sAPrompt, TFloorStatus fsAFloor, int iAOutputId) = 0;
+        virtual string ToString() = 0;
+        virtual COutput* Clone(int iNewOutputId) = 0;
+        string GetGeneratorAgentName();
+        int GetDialogStateIndex();
+        void SetDialogStateIndex(int iAExecutionIndex);
+        string GetDialogState();
+        void SetDialogState(string sADialogState);
+        void SetConveyance(TConveyance cAConveyance);
+        TConveyance GetConveyance();
+        void SetAct(string sAAct);
+        string GetAct();
+        void SetFinalFloorStatus(TFloorStatus fsAFloor);
+        TFloorStatus GetFinalFloorStatus();
+        string GetFinalFloorStatusLabel();
+        bool CheckFlag(string sFlag);
+        void NotifyConceptConveyance(string sConceptName, TConveyance cAConveyance);
+        virtual CConcept* GetConceptByName(string sConceptName);
+        void CancelConceptNotificationRequest(CConcept* pConcept);
+        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
+        int GetRepeatCounter();
+        void IncrementRepeatCounter();
+        virtual void clone(COutput* pOutput, int iNewOutputId);
+
+file: Agents/CoreAgents/TrafficManagerAgent.h
+    class CTrafficManagerAgent : public CAgent
+    BEHAVIOUR:
+        CTrafficManagerAgent(string sAName, string sAConfiguration, string sAType);
+        virtual ~CTrafficManagerAgent();
+        static CAgent* AgentFactory(string sAName, string sAConfiguration);
+        void Call(CDialogAgent* pCallerAgent, string sCall);
+        void galaxyCall(TExternalCallSpec ecsCall);
+        void oaaCall(TExternalCallSpec ecsCall);

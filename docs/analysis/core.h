@@ -8,10 +8,10 @@ file: Agents/Registry.h
         void Clear();
         void RegisterAgent(string sAgentName, CAgent* pAgent); -> CreateDialogTree diagram
         void UnRegisterAgent(string sAgentName);
-        bool IsRegisteredAgent(string sAgentName);
+        bool IsRegisteredAgent(string sAgentName); -> Used only as an internal method
         CAgent* operator[](string sAgentName); -> Used by DMCoreAgent, GroundingManagerAgent, Concept and Outputs
         void RegisterAgentType(string sAgentTypeName, FCreateAgent fctCreateAgent); -> CreateDialogTree diagram
-        void UnRegisterAgentType(string sAgentTypeName);
+        void UnRegisterAgentType(string sAgentTypeName); -> Used in the Agent's destructor
         bool IsRegisteredAgentType(string sAgentType);
         CAgent* CreateAgent(string sAgentTypeName, string sAgentName, string sAgentConfiguration); -> CreateDialogTree diagram
 
@@ -19,7 +19,7 @@ file: Agents/Agent.h
     class CAgent
     DATA:
         string sName;
-        string sType;
+        tring sType;
         STRING2STRING s2sConfiguration;
     BEHAVIOUR:
         CAgent(string sAName, string sAConfiguration, string sAType);
@@ -33,7 +33,7 @@ file: Agents/Agent.h
         bool HasParameter(string sParam);
         string GetParameterValue(string sParam);
         virtual void Register();
-        virtual void UnRegister();
+        virtual void UnRegister(); -> Used in the destructor
         virtual void Create();
         virtual void Initialize();
         virtual void Reset();
@@ -42,22 +42,22 @@ file: Agents/DialogAgents/DialogAgent.h
     class CDialogAgent : public CAgent
     DATA:
         string sDialogAgentName;
-        TConceptPointersVector Concepts;
+        TConceptPointersVector Concepts; -> Core attribute
         TAgentsVector SubAgents;
         CDialogAgent* pdaParent;
-        CDialogAgent* pdaContextAgent;
-        CGroundingModel* pGroundingModel;
-        bool bCompleted;
-        TCompletionType ctCompletionType;
+        CDialogAgent* pdaContextAgent; -> Semicore attribute
+        CGroundingModel* pGroundingModel; -> Core attribute
+        bool bCompleted; -> Core attribute
+        TCompletionType ctCompletionType; -> Core attribute
         bool bBlocked;
         bool bDynamicAgent;
         string sDynamicAgentID;
-        string sTriggeredByCommands;
-        string sTriggerCommandsGroundingModelSpec;
-        int iExecuteCounter;
+        string sTriggeredByCommands; -> Core attribute
+        string sTriggerCommandsGroundingModelSpec; -> Core attribute, this is the GroundingModel spec for the added concept
+        int iExecuteCounter; -> semicore attribute
         int iResetCounter;
         int iReOpenCounter;
-        int iTurnsInFocusCounter; -> only used by Update_NPU_UpdateWithConcept
+        int iTurnsInFocusCounter;
         int iLastInputIndex;
         int iLastExecutionInputIndex;
         int iLastExecutionIndex;
@@ -65,15 +65,15 @@ file: Agents/DialogAgents/DialogAgent.h
         STRING2STRING s2sInputLineConfiguration;
         bool bInheritedParentInputConfiguration;
     BEHAVIOUR:
-        CDialogAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CDialogAgent();
+        CDialogAgent(string sAName, string sAConfiguration, string sAType); -> Core abstraction
+        virtual ~CDialogAgent(); -> Core abstraction
         static CAgent* AgentFactory(string sAName, string sAConfiguration); -> CreateDialogTree diagram
         virtual void Register(); -> CreateDialogTree diagram
         virtual void Create(); -> CreateDialogTree diagram
         virtual void Initialize() -> CreateDialogTree diagram;
-        virtual void Reset();
+        virtual void Reset(); -> Core
         virtual void CreateConcepts(); -> CreateDialogTree diagram
-        virtual bool IsExecutable();
+        virtual bool IsExecutable(); -> Core in GetAgentInFocus to avoid using some Agents like MAExpect
         virtual TDialogExecuteReturnCode Execute(); -> DMCore thread diagram
         virtual int DeclareExpectations(TConceptExpectationList& rcelExpectationList); -> called in compileExpectationAgenda
         virtual void DeclareConcepts(TConceptPointersVector& rcpvConcepts, TConceptPointersSet& rcpsExclude);
@@ -81,24 +81,24 @@ file: Agents/DialogAgents/DialogAgent.h
         virtual CGroundingModel* GetGroundingModel(); -> Used by GroundingManagerAgent
         virtual void DeclareGroundingModels(TGroundingModelPointersVector& rgmpvModels, TGroundingModelPointersSet& rgmpsExclude);
         virtual bool ExpectCondition();
-        virtual string DeclareBindingPolicy();
+        virtual string DeclareBindingPolicy(); -> this method belongs to the ExpectationAgenda
         virtual int DeclareFocusClaims(TFocusClaimsList& fclFocusClaims); -> used by DMCoreAgent's assembleFocusClaims
         virtual bool PreconditionsSatisfied();
-        virtual bool ClaimsFocus(); used only by DialogAgent in DeclareFocusClaims
-        virtual bool ClaimsFocusDuringGrounding();
-        virtual string TriggeredByCommands();
-        void CreateTriggerConcept(); -> CreateDialogTree diagram
-        virtual bool SuccessCriteriaSatisfied(); -> defined by subclasses, used by assembleFocusClaims
-        virtual bool FailureCriteriaSatisfied(); -> defined by subclasses, used by assembleFocusClaims
-        virtual int GetMaxExecuteCounter();
+        virtual bool ClaimsFocus(); -> used in DialogAgent's DeclareFocusClaims
+        virtual bool ClaimsFocusDuringGrounding(); -> used in DialogAgent's DeclareFocusClaims
+        virtual string TriggeredByCommands(); -> Core abstraction
+        void CreateTriggerConcept(); -> used by Register function when the CreateDialogTree is called
+        virtual bool SuccessCriteriaSatisfied(); -> defined by subclasses, used by assembleFocusClaims and HasSucceeded
+        virtual bool FailureCriteriaSatisfied(); -> defined by subclasses, used by assembleFocusClaims and HasFailed
+        virtual int GetMaxExecuteCounter(); -> semicore, has dependencies throughout the core
         virtual void OnCreation();
         virtual void OnDestruction();
         virtual void OnInitialization();
         virtual void OnCompletion();
-        virtual void ReOpen();
-        virtual void ReOpenConcepts();
-        virtual void ReOpenTopic();
-        virtual bool IsAMainTopic();
+        virtual void ReOpen(); -> can be overwritten by the user, called in RestartTopic (which no one uses)
+        virtual void ReOpenConcepts(); -> is called by ReOpen
+        virtual void ReOpenTopic(); -> is called by ReOpen
+        virtual bool IsAMainTopic(); -> used by DMCoreAgent's GetCurrentMainTopic
         virtual string Prompt();
         virtual string TimeoutPrompt();
         virtual string ExplainMorePrompt();
@@ -106,29 +106,29 @@ file: Agents/DialogAgents/DialogAgent.h
         virtual string EstablishContextPrompt();
         virtual string WhatCanISayPrompt();
         virtual string InputLineConfigurationInitString();
-        virtual bool IsDTSAgent(); -> used in GroundingManagerAgent Run's method
+        virtual bool IsDTSAgent(); -> used in GroundingManagerAgent Run's method and DMCoreAgent in its functions related to the execution stack
         virtual bool IsConversationSynchronous();
-        virtual bool RequiresFloor(); -> DMCore thread diagram
+        virtual bool RequiresFloor(); -> Used by DMCore's Execute
         virtual void Undo();
-        virtual CConcept& C(string sConceptPath);
-        virtual CConcept& C(const char* lpszConceptPath, ...);
-        virtual CConcept& LocalC(string sConceptName);
-        CDialogAgent& A(string sDialogAgentPath);
-        CDialogAgent& A(const char* lpszDialogAgentPath, ...);
-        void AddSubAgent(CDialogAgent* pdaWho, CDialogAgent* pdaWhere, TAddSubAgentMethod asamMethod);
-        void DeleteSubAgent(CDialogAgent* pdaWho);
+        virtual CConcept& C(string sConceptPath); -> Query published interface
+        virtual CConcept& C(const char* lpszConceptPath, ...); -> Query published interface
+        virtual CConcept& LocalC(string sConceptName); -> Query published interface
+        CDialogAgent& A(string sDialogAgentPath); -> Query published interface
+        CDialogAgent& A(const char* lpszDialogAgentPath, ...); -> Query published interface
+        void AddSubAgent(CDialogAgent* pdaWho, CDialogAgent* pdaWhere, TAddSubAgentMethod asamMethod); -> used by DTT's Mount family of methods
+        void DeleteSubAgent(CDialogAgent* pdaWho); -> used by DTT's UnMount family of methods
         void DeleteDynamicSubAgents();
-        void SetParent(CDialogAgent* pdaAParent); -> CreateDialogTree diagram 
-        CDialogAgent* GetParent();
-        void UpdateName();
+        void SetParent(CDialogAgent* pdaAParent); -> used by DTT's CreateDialogTree
+        CDialogAgent* GetParent(); -> used by DTT
+        void UpdateName(); -> used by SetParent to update the hierarchichal name
         void SetContextAgent(CDialogAgent* pdaAContextAgent);
         CDialogAgent* GetContextAgent();
         CDialogAgent* GetMainTopic();
-        bool HasCompleted();
-        void SetCompleted(TCompletionType ctACompletionType = ctSuccess);
+        bool HasCompleted(); -> used by DMCoreAgent's popCompletedFromExecutionStack
+        void SetCompleted(TCompletionType ctACompletionType = ctSuccess); -> Core abstraction
         void ResetCompleted();
-        bool HasFailed();
-        bool HasSucceeded();
+        bool HasFailed(); -> used in HasCompleted
+        bool HasSucceeded(); -> used in HasCompleted
         bool IsAgentPathBlocked();
         virtual bool IsBlocked();
         void Block();
@@ -137,8 +137,8 @@ file: Agents/DialogAgents/DialogAgent.h
         bool IsDynamicAgent();
         void SetDynamicAgentID(string sADynamicAgentID);
         string GetDynamicAgentID();
-        void IncrementExecuteCounter();
-        int GetExecuteCounter();
+        void IncrementExecuteCounter(); -> semicore
+        int GetExecuteCounter(); -> semicore
         bool WasReset();
         bool WasReOpened();
         void IncrementTurnsInFocusCounter(); -> used by AcquireNextEvent
@@ -157,7 +157,7 @@ file: Agents/DialogAgents/DialogAgent.h
         string GetInputConfigurationParameterValue( string sSlot);
         void InheritParentInputConfiguration();
         STRING2STRING GetInputLineConfiguration();
-        void parseGrammarMapping(string sConceptNames, string sGrammarMapping, TConceptExpectationList& rcelExpectationList);
+        void parseGrammarMapping(string sConceptNames, string sGrammarMapping, TConceptExpectationList& rcelExpectationList); -> used by DeclareExpectations
 
 file: Concepts/Concept.h
     class CHyp
@@ -339,7 +339,7 @@ file: Concepts/Concept.h
         virtual void SetConveyance(TConveyance cConveyance);
         TConveyance GetConveyance();
         virtual void ClearConceptNotificationPointer();
-        virtual void ReOpen();
+        virtual void ReOpen(); -> called by ReOpenConcept in DialogAgent
         virtual void Restore(int iIndex);
         virtual void ClearHistory();
         virtual CConcept* CreateMergedHistoryConcept();
@@ -408,7 +408,7 @@ file: Agents/CoreAgents/DMCoreAgent.h
         bool AgentIsInFocus(CDialogAgent* pdaDialogAgent);
         CDialogAgent* GetAgentPreviouslyInFocus(CDialogAgent* pdaDialogAgent);
         CDialogAgent* GetDTSAgentPreviouslyInFocus( CDialogAgent* pdaDialogAgent);
-        CDialogAgent* GetCurrentMainTopicAgent();
+        CDialogAgent* GetCurrentMainTopicAgent(); -> used by DialogAgent's parseGrammarMapping
         bool AgentIsActive(CDialogAgent* pdaDialogAgent); -> used by assembleFocusClaims
         void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
         void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
@@ -435,7 +435,7 @@ file: Agents/CoreAgents/DMCoreAgent.h
         string currentSystemActionToString();
         void assembleExpectationAgenda(); -> called in UpdateState
         void compileExpectationAgenda(); -> called in UpdateState
-        void enforceBindingPolicies(); -> used in assembleExpectationAgenda
+        void enforceBindingPolicies(); -> used in assembleExpectationAgenda, this method belongs to the expectation agenda
         void broadcastExpectationAgenda();
         string expectationAgendaToString();
         string expectationAgendaToBroadcastString();

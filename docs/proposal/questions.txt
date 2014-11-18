@@ -106,3 +106,7 @@ The main points are:
       them and change the state of the App.
     + The Communication subsystem encapsulates the communication system between
       the different modules of the NoApp/Olympus framework.
+
+
+18/11/2014
+    + There should be a debug interface for the core classes, for example it could include the Declare* abstraction in DialogAgent and Concept

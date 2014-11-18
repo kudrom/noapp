@@ -12,7 +12,7 @@ file: Agents/Registry.h
         CAgent* operator[](string sAgentName); -> Used by DialogAgents and GroundingActions
         void RegisterAgentType(string sAgentTypeName, FCreateAgent fctCreateAgent);
         void UnRegisterAgentType(string sAgentTypeName);
-        bool IsRegisteredAgentType(string sAgentType);
+        bool IsRegisteredAgentType(string sAgentType); -> Used in GroundingActions
         CAgent* CreateAgent(string sAgentTypeName, string sAgentName, string sAgentConfiguration);
 
 file: Agents/Agent.h
@@ -54,7 +54,7 @@ file: Agents/DialogAgents/DialogAgent.h
         string sDynamicAgentID;
         string sTriggeredByCommands;
         string sTriggerCommandsGroundingModelSpec;
-        int iExecuteCounter;
+        int iExecuteCounter; -> Semicore attribute, used in some DiscourseAgents
         int iResetCounter;
         int iReOpenCounter;
         int iTurnsInFocusCounter;
@@ -80,12 +80,12 @@ file: Agents/DialogAgents/DialogAgent.h
         virtual void CreateGroundingModel(string sGroundingModelSpec);
         virtual CGroundingModel* GetGroundingModel();
         virtual void DeclareGroundingModels(TGroundingModelPointersVector& rgmpvModels, TGroundingModelPointersSet& rgmpsExclude);
-        virtual bool ExpectCondition();
-        virtual string DeclareBindingPolicy(); -> defined in CONCEPT_BINDING_POLICY, used in enforceBindingPolicies
+        virtual bool ExpectCondition(); -> Defined in EXPECT_WHEN, modifies the behaviour of DeclareExpectations
+        virtual string DeclareBindingPolicy(); -> defined in CONCEPT_BINDING_POLICY, used in DMCoreAgent's enforceBindingPolicies
         virtual int DeclareFocusClaims(TFocusClaimsList& fclFocusClaims);
-        virtual bool PreconditionsSatisfied();
+        virtual bool PreconditionsSatisfied(); -> defined in PRECONDITION and also subclassed, it's used in DialogAgency in NextAgentToExecute
         virtual bool ClaimsFocus();
-        virtual bool ClaimsFocusDuringGrounding();
+        virtual bool ClaimsFocusDuringGrounding(); -> defined in CAN_TRIGGER_DURING_GROUNDING to true, otherwise false
         virtual string TriggeredByCommands(); -> Defined by TRIGGERED_BY_COMMANDS in each Agent definition, called in CreateDialogTree diagram
         void CreateTriggerConcept();
         virtual bool SuccessCriteriaSatisfied();
@@ -93,22 +93,22 @@ file: Agents/DialogAgents/DialogAgent.h
         virtual int GetMaxExecuteCounter();
         virtual void OnCreation(); -> defined by ON_CREATION, called in CreateDialogTree diagram
         virtual void OnDestruction(); -> defined by ON_DESTRUCTION, called in DestroyDialogTree in DTTManagerAgent
-        virtual void OnInitialization(); -> defined by ON_INITIALIZATION, callied in CreateDialogTree diagram
-        virtual void OnCompletion();
-        virtual void ReOpen();
-        virtual void ReOpenConcepts();
-        virtual void ReOpenTopic();
-        virtual bool IsAMainTopic();
-        virtual string Prompt();
-        virtual string TimeoutPrompt();
-        virtual string ExplainMorePrompt();
-        virtual string CreateVersionedPrompt(string sVersion);
-        virtual string EstablishContextPrompt();
-        virtual string WhatCanISayPrompt();
+        virtual void OnInitialization(); -> defined by ON_INITIALIZATION, called in CreateDialogTree diagram and by ReOpenTopic
+        virtual void OnCompletion(); -> defined by ON_COMPLETION, called in popAgentFromExecutionStack, popTopicFromExecutionStack and popGroundingAgentsFromExecutionStack
+        virtual void ReOpen(); -> defined by ON_REOPEN, has a default implementation and is used by REOPEN_AGENT
+        virtual void ReOpenConcepts(); -> is called by REOPEN_AGENT
+        virtual void ReOpenTopic(); -> is called by REOPEN_TOPIC
+        virtual bool IsAMainTopic(); -> is defined to true by IS_MAIN_TOPIC
+        virtual string Prompt(); -> defined by subclasses, called by every GroundingAction and DialogAgent that needs to talk to the user
+        virtual string TimeoutPrompt(); -> called by every GroundingAction and DialogAgent that needs to talk to the user
+        virtual string ExplainMorePrompt(); -> called by every GroundingAction and DialogAgent that needs to talk to the user
+        virtual string CreateVersionedPrompt(string sVersion); -> called by every GroundingAction and DialogAgent that needs to talk to the user
+        virtual string EstablishContextPrompt(); -> called by every GroundingAction and DialogAgent that needs to talk to the user
+        virtual string WhatCanISayPrompt(); -> called by every GroundingAction and DialogAgent that needs to talk to the user
         virtual string InputLineConfigurationInitString();
-        virtual bool IsDTSAgent();
-        virtual bool IsConversationSynchronous();
-        virtual bool RequiresFloor();
+        virtual bool IsDTSAgent(); -> defined in IS_NOT_DTS_AGENT as false
+        virtual bool IsConversationSynchronous(); -> defined in IS_CONVERSATION_SYNCHRONOUS as false
+        virtual bool RequiresFloor(); -> defined by REQUIRES_FLOOR and DOES_NOT_REQUIRE_FLOOR
         virtual void Undo();
         virtual CConcept& C(string sConceptPath);
         virtual CConcept& C(const char* lpszConceptPath, ...);
@@ -124,11 +124,11 @@ file: Agents/DialogAgents/DialogAgent.h
         void SetContextAgent(CDialogAgent* pdaAContextAgent);
         CDialogAgent* GetContextAgent();
         CDialogAgent* GetMainTopic();
-        bool HasCompleted();
-        void SetCompleted(TCompletionType ctACompletionType = ctSuccess);
+        bool HasCompleted(); -> has a default definition but can be defined in COMPLETED
+        void SetCompleted(TCompletionType ctACompletionType = ctSuccess); -> used in DialogAgents and GroundingActions
         void ResetCompleted();
-        bool HasFailed();
-        bool HasSucceeded();
+        bool HasFailed(); -> has a default definition but can be defined in FAILED
+        bool HasSucceeded(); -> has a default definition but can be defined in SUCCEEDED
         bool IsAgentPathBlocked();
         virtual bool IsBlocked();
         void Block();
@@ -339,7 +339,7 @@ file: Concepts/Concept.h
         virtual void SetConveyance(TConveyance cConveyance);
         TConveyance GetConveyance();
         virtual void ClearConceptNotificationPointer();
-        virtual void ReOpen();
+        virtual void ReOpen(); -> called by REOPEN_CONCEPT
         virtual void Restore(int iIndex);
         virtual void ClearHistory();
         virtual CConcept* CreateMergedHistoryConcept();

@@ -1,0 +1,53 @@
+Registry.cpp
+    + The Registry is good.
+    + What's the protocol to create/register/initialize a new Agent into the Registry? -> It's all in the CreateDialogTree diagram, to sum up:
+       +.1 first it's called Create by the Registry, who creates its concepts, calls its subagents and OnCreation callback.
+       +.2 then it's called Initialize by the DTTManager, who callback OnInitialization with the groundingModel already instantiated, this callback is also called by Reset
+       +.3 then it's called Register by the GTTManager, that initializes the TriggeredConcepts
+       +.+ All callbacks can be overwritten by the RCTSL
+
+Agent.cpp
+    + An Agent has as its responsabilities to handle the configuration and the creation of an agent.
+    + The configuration of an agent is too much C-like, we should use a common class and provide an abstraction of the different config files in the FS that translates to a volatile config for every CoreAgent.
+
+DialogAgent.cpp
+    + Why is the sName property of the Agent duplicated in a sDialogAgentName attribute of DialogAgent?
+    + Maybe the ContextAgent abstraction is broken; currently they only serve to determine the parent to start the LocalC method and the EstablishContextPrompt method
+    + Why a DialogAgent has SubAgents and a parent as an attribute? The DTT should handle all that abstraction. -> it's used thoughout the entire class
+    + The bCompleted, ctCompletion and {Success, Failure}CriteriaSatisfied are too misleading, there are two criteria to state if a DialogAgent has succeeded/failed.
+    + No one is using the block abstraction.
+    + Nearly no one is using the dynamic abstraction except the LocalC method that uses it to construct the returned Concept
+    + Maybe the sTriggeredByCommands shouldn't be a plain string.
+    + Should the iExecuteCounter be removed?
+    + No one is using the iResetCounter abstraction
+    + No one is using the iReOpenCounter abstraction
+    + Only Update_NPU_UpdateWithConcept is using iTurnsInFocusCounter
+    + No one is using the iLastInputIndex abstraction
+    + No one is using the iLastExecutionInputIndex abstraction
+    + No one is using the iLastExecutionIndex abstraction
+    + No one is using the iLastBindingsIndex abstraction
+    + No one is using the InputLineConfiguration abstraction, and it should be a common abstraction with the Agent's configuration one
+    + The Execute method of DialogAgent is different from the Agent one
+    + DeclareExpectations relies on inheritance
+    + The only client of DeclareConcepts is DMCoreAgent.dumpConcepts
+    + No one is using DeclareGroundingModels
+    + DeclareGroundingModels relies on inheritance
+    + A DialogAgent shouldn't be responsible for creating GroundingModels and Concepts, it should be a responsibility of the GroundingManagerAgent and a ConceptsRegistry?. If the DialogAgent needs to alter the groundingModel, a command pattern should be used instead.
+    + The focus claim can trigger because of the ClaimsFocus call (TRIGERRED_BY) or because of TriggeredByCommands call (TRIBBERED_BY_COMMANDS) 
+    + Both the focus claims and the expectation agenda shouldn't be built in DialogAgent; DialogAgent has the information to build them but other class should be responsible of its building. Both of them use DialogAgent and the DTT as information providers.
+    + The only client of ResetCompleted are the DMCoreAgent's Undo/rollBackDialogState methods, which no one uses.
+    + The ReOpen abstraction is only used by the user, because no one uses the other client: DMCoreAgent's RestartTopic
+    + No one uses GetMainTopic and it is overwritten by the set of methods of DMCoreAgent that deal with the execution stack
+    + No one uses IsConversationSynchronous even when it exists IS_CONVERSATION_SYNCHRONOUS
+    + No one uses DeleteDynamicSubAgents
+
+Concept.cpp
+    + The CHyp class only provides a way to do arithmetic operations with a confidence
+    + The only client of DeclareConcepts is DMCoreAgent.dumpConcepts
+    + DeclareGroundingModels relies on inheritance
+
+DMCoreAgent.cpp
+    + No one uses dumpConcepts, but this might be useful for debugging
+    + No one uses the Undo and rollBackDialogState methods, and they're too simple to be useful right now
+    + No one uses RestartTopic.
+

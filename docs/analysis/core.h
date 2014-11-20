@@ -365,66 +365,74 @@ file: Agents/CoreAgents/DMCoreAgent.h
         TSystemAction saSystemAction; -> used in performForcedConceptUpdates
         int iTimeoutPeriod;
         int iDefaultTimeoutPeriod;
-        float fNonunderstandingThreshold;
+        float fNonunderstandingThreshold; -> Core, used in bindConcepts
         float fDefaultNonunderstandingThreshold;
-        STRING2BFF s2bffFilters;
+        STRING2BFF s2bffFilters; -> Core
         bool bFocusClaimsPhaseFlag; -> Used in the main loop
-        bool bAgendaModifiedFlag;
+        bool bAgendaModifiedFlag; -> Used by StateManager.UpdateState
         TFloorStatus fsFloorStatus; -> binded to fsFree and changed to fsUser or fsSystem in Execute; changed to any state in AcquireNextEvent
-        int iTurnNumber;
+        int iTurnNumber; -> Core attribute, used by GroundingManager, DMCoreAgent, StateManager
         TCustomStartOverFunct csoStartOverFunct; -> used by RegisterCustomStartOver
     BEHAVIOUR:
-        CDMCoreAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CDMCoreAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
+        CDMCoreAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~CDMCoreAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+        virtual void Reset(); -> Core
         void Execute(); -> DMCore thread diagram
         void AcquireNextEvent(); -> DMCore thread diagram
         void RegisterBindingFilter(string sBindingFilterName, TBindingFilterFunct bffFilter);
         int GetIntSessionID();
-        void SetTimeoutPeriod(int iATimeoutPeriod);
+        void SetTimeoutPeriod(int iATimeoutPeriod); -> used in MARequest
         int GetTimeoutPeriod();
         void SetDefaultTimeoutPeriod(int iADefaultTimeoutPeriod);
         int GetDefaultTimeoutPeriod();
-        void SetNonunderstandingThreshold(float fANonunderstandingThreshold);
-        float GetNonunderstandingThreshold();
+        void SetNonunderstandingThreshold(float fANonunderstandingThreshold); -> Used by MARequest
+        float GetNonunderstandingThreshold(); -> Used in StateManager
         void SetDefaultNonunderstandingThreshold(float fANonuThreshold);
         float GetDefaultNonunderstandingThreshold();
         void SignalFocusClaimsPhase(bool bAFocusClaimsPhaseFlag); -> AcquireNextEvent diagram
         void SetFloorStatus(TFloorStatus fsaFloorStatus); -> DMCore thread diagram, AcquireNextEvent diagram
         TFloorStatus GetFloorStatus(); -> DMCore thread diagram
-        string FloorStatusToString(TFloorStatus fsAFloor);
-        TFloorStatus StringToFloorStatus(string sAFloor);
+        string FloorStatusToString(TFloorStatus fsAFloor); -> used in Output
+        TFloorStatus StringToFloorStatus(string sAFloor); -> used in RequireNextEvent
+
+        // API of History
         int LastTurnGetConceptsBound();
         bool LastTurnNonUnderstanding(); -> Used in Run diagram by GroundingManagerAgent
-        int GetNumberNonUnderstandings();
+        int GetNumberNonUnderstandings(); -> used in some GMRequests as part of the full state
         int GetTotalNumberNonUnderstandings();
+        int GetBindingHistorySize();
+        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
+        int GetLastInputTurnNumber(); -> used by Concept's NotifyChange and GroundingManager
+
+        // API of ExecutionStack
         void ContinueWith(CAgent* paPusher, CDialogAgent* pdaDialogAgent); -> DMCoreAgent in Execute, resolveFocusShitf, RestartTopic and StartOver
-        void RestartTopic(CDialogAgent* pdaDialogAgent);
+        void RestartTopic(CDialogAgent* pdaDialogAgent); -> Core but no one is using it
         void RegisterCustomStartOver(TCustomStartOverFunct csoAStartOverFunct);
         void StartOver(); -> DMCore thread diagram
-        CDialogAgent* GetAgentInFocus(); -> DMCore thread diagram and AcquireNextEvent
-        CDialogAgent* GetDTSAgentInFocus();
-        bool AgentIsInFocus(CDialogAgent* pdaDialogAgent);
+        CDialogAgent* GetAgentInFocus(); -> DMCore thread diagram, used by AcquireNextEvent, GroundingManager and StateManager
+        CDialogAgent* GetDTSAgentInFocus(); -> used by DialogAgent.parseGrammarMapping
+        bool AgentIsInFocus(CDialogAgent* pdaDialogAgent); -> used by DialogAgent.parseGrammarMapping
         CDialogAgent* GetAgentPreviouslyInFocus(CDialogAgent* pdaDialogAgent);
         CDialogAgent* GetDTSAgentPreviouslyInFocus( CDialogAgent* pdaDialogAgent);
         CDialogAgent* GetCurrentMainTopicAgent(); -> used by DialogAgent's parseGrammarMapping
         bool AgentIsActive(CDialogAgent* pdaDialogAgent); -> used by assembleFocusClaims
-        void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
-        void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
+        void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent); -> Core
+        void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent); -> Core
         void PopGroundingAgentsFromExecutionStack();
-        int GetBindingHistorySize();
-        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
-        int GetLastInputTurnNumber(); -> used by Concept's NotifyChange
+
+        // API of System Actions
         TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
         void SignalExplicitConfirmOnConcept(CConcept* pConcept);
         void SignalImplicitConfirmOnConcept(CConcept* pConcept);
         void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
         void SignalAcceptOnConcept(CConcept* pConcept);
-        int popCompletedFromExecutionStack(); -> DMCore thread diagram
-        void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
-        void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
-        void popGroundingAgentsFromExecutionStack(TStringVector& rvsAgentsEliminated);
+
+        // Private API
+        int popCompletedFromExecutionStack(); -> implementation side
+        void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated); -> implementation side
+        void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated); -> implementation side
+        void popGroundingAgentsFromExecutionStack(TStringVector& rvsAgentsEliminated); -> implementation side
         void dumpConcepts();
         void dumpExecutionStack();
         string executionStackToString();
@@ -440,7 +448,7 @@ file: Agents/CoreAgents/DMCoreAgent.h
         string expectationAgendaToString();
         string expectationAgendaToBroadcastString();
         string expectationAgendaToBroadcastString(TExpectationAgenda eaBAgenda);
-        string bindingsDescrToString(TBindingsDescr& rbdBindings);
+        string bindingsDescrToString(TBindingsDescr& rbdBindings); -> used to log in bindConcepts
         void updateInputLineConfiguration();
         int assembleFocusClaims(); -> used in DMCore thread diagram
         void bindConcepts(TBindingsDescr& rbdBindings); -> Used in AcquireNextEvent
@@ -457,10 +465,10 @@ file: Agents/CoreAgents/DTTManagerAgent.h
         CDialogAgent* pdaDialogTaskRoot; -> Used by DTTManagerAgent and DMCoreAgent
         vector<TDiscourseAgentInfo, allocator<TDiscourseAgentInfo>> vdaiDAInfo; -> CreateDialogTree diagram
     BEHAVIOUR:
-        CDTTManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CDTTManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
+        CDTTManagerAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~CDTTManagerAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+        virtual void Reset(); -> Core
         void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration); -> DMCore thread diagram
         void CreateDialogTree(); -> DMCore thread diagram
         void DestroyDialogTree(); -> used by StartOver

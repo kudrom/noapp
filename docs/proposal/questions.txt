@@ -110,3 +110,7 @@ The main points are:
 
 18/11/2014
     + There should be a debug interface for the core classes, for example it could include the Declare* abstraction in DialogAgent and Concept
+
+20/11/2014
+    + Where are the dependencies to windows in each file?
+    + Doublecheck the constructor/destructors of all core agents

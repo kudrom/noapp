@@ -84,7 +84,25 @@ Concept.cpp
 
 
 DMCoreAgent.cpp
+    + The iTimeoutPeriod abstraction is not used
+    + The iDefaultTimeoutPeriod is only used by the user and MARequest
+    + The iDefaultNonunderstandingThreshold is not used
+    + The type of a filter shouldn't be a c-like function
+    + No one is using GetIntSessionID, it's also a wrapper around GalaxyInterface.DMI_GetIntSessionID
+    + No one is using RestartTopic, however it's a core funciton
+    + Maybe StartOver is a specialization of RestartTopic
+    + No one is using RegisterCustomStartOver
+    + The Get*Agent abstraction to query the ExecutionStack is hardly used and it's duplicated all over the place
+    + The Pop*FromExecutionStack agent is badly designed. No one uses PopGroundingAgentsFromExecutionStack
+    + The saSystemAction abstraction is fed by the GroundingActions and they are used in the Updating belief process
     + No one uses dumpConcepts, but this might be useful for debugging
-    + No one uses the Undo and rollBackDialogState methods, and they're too simple to be useful right now
-    + No one uses RestartTopic.
+    + No one uses dumpExecutionStack, nor executionStackToString for that matter
+    + The dependency to windows is in the updateInputLineConfiguration
+    + performCustomConceptBinding is not defined nor in the class nor with a user macro
+    + No one uses processNonUnderstanding
+    + No one uses the Undo and rollBackDialogState methods, however they could be core
 
+DTTManagerAgent.cpp
+    + Is a vector (vdaiDAInfo) the best representation of the tree?
+    + How works the declaration of libraries?
+    + 

@@ -371,7 +371,7 @@ file: Agents/CoreAgents/DMCoreAgent.h
         bool bFocusClaimsPhaseFlag;
         bool bAgendaModifiedFlag;
         TFloorStatus fsFloorStatus;
-        int iTurnNumber;
+        int iTurnNumber; -> used in GroundingActions and DialogAgents
         TCustomStartOverFunct csoStartOverFunct;
     BEHAVIOUR:
         CDMCoreAgent(string sAName, string sAConfiguration, string sAType);
@@ -380,11 +380,11 @@ file: Agents/CoreAgents/DMCoreAgent.h
         virtual void Reset();
         void Execute();
         void AcquireNextEvent();
-        void RegisterBindingFilter(string sBindingFilterName, TBindingFilterFunct bffFilter);
+        void RegisterBindingFilter(string sBindingFilterName, TBindingFilterFunct bffFilter); -> used in BINDING_FILTER
         int GetIntSessionID();
         void SetTimeoutPeriod(int iATimeoutPeriod);
         int GetTimeoutPeriod();
-        void SetDefaultTimeoutPeriod(int iADefaultTimeoutPeriod);
+        void SetDefaultTimeoutPeriod(int iADefaultTimeoutPeriod); -> used in DEFAULT_TIMEOUT_PERIOD
         int GetDefaultTimeoutPeriod();
         void SetNonunderstandingThreshold(float fANonunderstandingThreshold);
         float GetNonunderstandingThreshold();
@@ -395,10 +395,17 @@ file: Agents/CoreAgents/DMCoreAgent.h
         TFloorStatus GetFloorStatus();
         string FloorStatusToString(TFloorStatus fsAFloor);
         TFloorStatus StringToFloorStatus(string sAFloor);
+
+        // API of History
         int LastTurnGetConceptsBound();
         bool LastTurnNonUnderstanding(); -> Used by GroundingActions, GMRequestAgent and DialogAgents
         int GetNumberNonUnderstandings();
         int GetTotalNumberNonUnderstandings();
+        int GetBindingHistorySize(); -> used by GroundingActions
+        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex); -> used by GroundingActions
+        int GetLastInputTurnNumber(); -> used by DiscourseAgents
+
+        // API of ExecutionStack
         void ContinueWith(CAgent* paPusher, CDialogAgent* pdaDialogAgent); -> GroundingActions and both types of DialogAgents
         void RestartTopic(CDialogAgent* pdaDialogAgent);
         void RegisterCustomStartOver(TCustomStartOverFunct csoAStartOverFunct); -> defined in CUSTOM_START_OVER
@@ -413,14 +420,15 @@ file: Agents/CoreAgents/DMCoreAgent.h
         void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
         void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
         void PopGroundingAgentsFromExecutionStack();
-        int GetBindingHistorySize();
-        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
-        int GetLastInputTurnNumber();
+
+        // API of System Actions
         TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
         void SignalExplicitConfirmOnConcept(CConcept* pConcept);
         void SignalImplicitConfirmOnConcept(CConcept* pConcept);
         void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
         void SignalAcceptOnConcept(CConcept* pConcept);
+
+        // Private API
         int popCompletedFromExecutionStack();
         void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
         void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
@@ -461,7 +469,7 @@ file: Agents/CoreAgents/DTTManagerAgent.h
         virtual ~CDTTManagerAgent();
         static CAgent* AgentFactory(string sAName, string sAConfiguration);
         virtual void Reset();
-        void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration);
+        void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration); -> used in LIBRARY_AGENT
         void CreateDialogTree();
         void DestroyDialogTree();
         void ReCreateDialogTree();

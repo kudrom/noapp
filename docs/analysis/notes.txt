@@ -42,9 +42,46 @@ DialogAgent.cpp
     + No one uses DeleteDynamicSubAgents
 
 Concept.cpp
-    + The CHyp class only provides a way to do arithmetic operations with a confidence
-    + The only client of DeclareConcepts is DMCoreAgent.dumpConcepts
+    + The CHyp class only provides an interface to do arithmetic operations with a confidence.
+    + It is more reliable to use relations between the set of logical operators of Concepts, for example, use operator== and operator< to implement operator<=
+    + Are the operators used?
+    + The operator[] is not defined for indexes > 0
+    + The type of a Concept shouldn't be determined by an attribute if we're using OOP, currently it's only used to Log. There's another parallel abstraction defined in the GroundingManager which is accessed through the Concept.GetConceptTypeInfo method.
+    + No one is using the csConceptSource abstraction
+    + No one is using the pOwnerDialogAgent abstraction, however it could be a core attribute
+    + pOwnerConcept is only used by IsGrounded, when does it make sense to have a hierarchical structure of Concepts?
+    + No one is using bInvalidated
+    + No one is using bRestoredForGrounding except SetGroundedFlag
+    + The only purpose of bChangeNotification is to block signals to reach the GroundingManager when NotifyChange is called, it's also used by SetGroundedFlag
+    + Is iNumValidHyps the length of vhCurrentHypSet? -> it's managed in the addition/deletion of hyps but it's only used to set the invalidated flag in the normal belief updating model
+    + Only some of the PartialHyp abstraction is used by ConceptStruct
+    + The getter and setter of iCardinality are not used
+    + The iTurnLastUpdated abstraction could be useless
+    + The bWaitingConveyance is not used except for the cleanup in ClearWaitingConveyance
+    + No one is using ClearCurrentValue
+    + The Explicitly abstraction is only used by Calista through the GroundingManager's PrecomputeBeliefUpdatingFeatures, which uses the getters, however the implementation is scattered throught the entire Concept class.
+    + The bHistoryConcept checks if the concept is in the history, the pPrevConcept attribute is a link to the last Concept in the history, which has a different set of Hyps. This is used mostly by Calista.
+    + No one uses HasPartialUpdate
+    + IsGrounded is only used by IsUpdatedAndGrounded, which is used mostly inside but also by DialogAgents.
+    + There is no clean interface of the Is* methods, the uses should be study to provide a coherent interface
+    + The Hyp(Set)ToString family of methods is used mostly for logging.
+    + As in DialogAgent, no one is using DeclareGroundingModels
     + DeclareGroundingModels relies on inheritance
+    + As in DialogAgent, the only client of DeclareConcepts is DMCoreAgent.dumpConcepts because the DialogAgent method uses this method
+    + The methods to create Hyps should belong to a separate factory because only a Concept uses them
+    + The methods to create/set a Hyp to Null should be dropped altogether, they are the same as the New ones
+    + No one is using GetHypIndex.
+    + GetHypConfidence is never used. SetHypConfidence rely on the index, but no one is using GetHypIndex, so they are iterating over the entire list and using the index as the argument. SetHypConfidence is only used inside.
+    + The set of GetTopHyps methods should be redesigned to reduce the boilerplate in the API
+    + No one is using Get2ndHypIndex
+    + No one uses IsValidHyp
+    + The CopyCurrentHypSetFrom implements most of the copy behaviour of a Concept
+    + The conveyance is the core interface between a concept and the output subsystem
+    + All the history of a concept is its pPrevConcept
+    + Why the concept's history exists? MergeHistory isn't used, the only method used is SetHistoryConcept, GetHistorySize and the bHistoryConcept attribute
+    + GetHistoryVersion is a synonym of operator[]
+    + The GetSize, DeleteAt and InsertAt are only valid for the ArrayConcept, why are they defined in the Concept class?
+
 
 DMCoreAgent.cpp
     + No one uses dumpConcepts, but this might be useful for debugging

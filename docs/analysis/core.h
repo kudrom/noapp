@@ -184,53 +184,53 @@ file: Concepts/Concept.h
 
     class CConcept
     DATA:
-        TConceptType ctConceptType;
+        TConceptType ctConceptType; -> Core attribute
         TConceptSource csConceptSource;
-        string sName;
-        CDialogAgent* pOwnerDialogAgent;
-        CConcept* pOwnerConcept;
-        CGMConcept* pGroundingModel;
-        bool bGrounded;
+        string sName; -> Core attribute
+        CDialogAgent* pOwnerDialogAgent; -> Core attribute?
+        CConcept* pOwnerConcept; -> used by IsGrounded
+        CGMConcept* pGroundingModel; -> Core attribute
+        bool bGrounded; -> used by IsUpdatedAndGrounded
         bool bInvalidated;
-        bool bRestoredForGrounding;
-        bool bSealed;
-        bool bChangeNotification;
-        vector<CHyp*, allocator<CHyp*>> vhCurrentHypSet;
+        bool bRestoredForGrounding; -> used by SetGroundedFlag
+        bool bSealed; -> Core attribute, used in the grounding process
+        bool bChangeNotification; -> used by SetGroundedFlag
+        vector<CHyp*, allocator<CHyp*>> vhCurrentHypSet; -> Core attribute
         int iNumValidHyps;
-        vector<CHyp*, allocator<CHyp*>> vhPartialHypSet;
-        int iNumValidPartialHyps;
-        int iCardinality;
-        int iTurnLastUpdated;
-        TConveyance cConveyance;
+        vector<CHyp*, allocator<CHyp*>> vhPartialHypSet; -> Used moslty by StructConcept
+        int iNumValidPartialHyps; -> Used moslty by StructConcept
+        int iCardinality; -> Used inside
+        int iTurnLastUpdated; -> Core? is only used by some subclasses
+        TConveyance cConveyance; -> Core attribute
         bool bWaitingConveyance;
-        CConcept* pPrevConcept;
-        bool bHistoryConcept;
-        string sExplicitlyConfirmedHyp;
-        string sExplicitlyDisconfirmedHyp;
+        CConcept* pPrevConcept; -> Core attribute
+        bool bHistoryConcept; -> Core attribute
+        string sExplicitlyConfirmedHyp; -> Only used by the update process
+        string sExplicitlyDisconfirmedHyp; -> Only used by the update process
     BEHAVIOUR:
-        CConcept(string sAName, TConceptSource csAConceptSource, int iACardinality);
-        virtual ~CConcept();
-        virtual CConcept& operator = (CConcept& rAConcept);
-        virtual CConcept& operator = (int iAValue);
-        virtual CConcept& operator = (bool bAValue);
-        virtual CConcept& operator = (float fAValue);
-        virtual CConcept& operator = (double dAValue);
-        virtual CConcept& operator = (string sAValue);
-        virtual CConcept& operator = (const char* lpszAValue);
-        virtual bool operator == (CConcept& rAConcept);
-        virtual bool operator != (CConcept& rAConcept);
-        virtual bool operator < (CConcept& rAConcept);
-        virtual bool operator > (CConcept& rAConcept);
-        virtual bool operator <= (CConcept& rAConcept);
-        virtual bool operator >= (CConcept& rAConcept);
-        virtual CConcept& operator [](int iIndex);
-        virtual CConcept& operator [](string sIndex);
-        virtual CConcept& operator [](const char* lpszIndex);
-        virtual operator int();
-        virtual operator float();
-        virtual operator bool();
-        virtual operator string();
-        virtual void Clear();
+        CConcept(string sAName, TConceptSource csAConceptSource, int iACardinality); -> Core behaviour
+        virtual ~CConcept(); -> Core behaviour
+        virtual CConcept& operator = (CConcept& rAConcept); -> Core behaviour
+        virtual CConcept& operator = (int iAValue); -> Core behaviour
+        virtual CConcept& operator = (bool bAValue); -> Core behaviour
+        virtual CConcept& operator = (float fAValue); -> Core behaviour
+        virtual CConcept& operator = (double dAValue); -> Core behaviour
+        virtual CConcept& operator = (string sAValue); -> Core behaviour
+        virtual CConcept& operator = (const char* lpszAValue); -> Core behaviour
+        virtual bool operator == (CConcept& rAConcept); -> Core behaviour
+        virtual bool operator != (CConcept& rAConcept); -> Core behaviour
+        virtual bool operator < (CConcept& rAConcept); -> Core behaviour
+        virtual bool operator > (CConcept& rAConcept); -> Core behaviour
+        virtual bool operator <= (CConcept& rAConcept); -> Core behaviour
+        virtual bool operator >= (CConcept& rAConcept); -> Core behaviour
+        virtual CConcept& operator [](int iIndex); -> Core behaviour
+        virtual CConcept& operator [](string sIndex); -> Core behaviour
+        virtual CConcept& operator [](const char* lpszIndex); -> Core behaviour
+        virtual operator int(); -> Core behaviour
+        virtual operator float(); -> Core behaviour
+        virtual operator bool(); -> Core behaviour
+        virtual operator string(); -> Core behaviour
+        virtual void Clear(); -> used by DialogAgent in Reset
         virtual void ClearCurrentValue();
         virtual CConcept* Clone(bool bCloneHistory);
         virtual CConcept* EmptyClone(); -> used in performConceptBinding
@@ -239,15 +239,15 @@ file: Concepts/Concept.h
         virtual void Update_NPU_AssignFromConcept(void* pUpdateData); -> used with the assignment operator
         virtual void Update_NPU_UpdateWithConcept(void* pUpdateData); -> used in performConceptBinding
         virtual void Update_NPU_CollapseToMode(void* pUpdateData); -> used in performConceptBinding
-        virtual void Update_PartialFromString(void* pUpdateData); -> used in performConceptBinding
-        virtual void Update_Calista_AssignFromString(void* pUpdateData);
-        virtual void Update_Calista_AssignFromConcept(void* pUpdateData);
-        virtual void Update_Calista_UpdateWithConcept(void* pUpdateData);
-        virtual void Update_Calista_CollapseToMode(void* pUpdateData);
-        virtual bool IsUpdated();
-        virtual bool IsUpdatedAndGrounded();
-        virtual bool IsAvailable();
-        virtual bool IsAvailableAndGrounded();
+        virtual void Update_PartialFromString(void* pUpdateData); -> used in performConceptBinding and by StructConcept
+        virtual void Update_Calista_AssignFromString(void* pUpdateData); -> used in performConceptBinding
+        virtual void Update_Calista_AssignFromConcept(void* pUpdateData); -> used in performConceptBinding
+        virtual void Update_Calista_UpdateWithConcept(void* pUpdateData); -> used in performConceptBinding
+        virtual void Update_Calista_CollapseToMode(void* pUpdateData); -> used in performConceptBinding
+        virtual bool IsUpdated(); -> used inside the class
+        virtual bool IsUpdatedAndGrounded(); ->  used inside and by DialogAgent
+        virtual bool IsAvailable(); -> used by IsAvailableAndGrounded
+        virtual bool IsAvailableAndGrounded(); -> used by Calista
         virtual bool HasPartialUpdate();
         virtual bool IsGrounded();
         virtual bool IsUndergoingGrounding(); -> used in performConceptBinding
@@ -256,22 +256,22 @@ file: Concepts/Concept.h
         virtual string GroundedHypToString();
         virtual string TopHypToString();
         virtual string HypSetToString();
-        virtual TConceptType GetConceptType();
-        virtual void SetConceptType(TConceptType ctAConceptType);
+        virtual TConceptType GetConceptType(); -> Core
+        virtual void SetConceptType(TConceptType ctAConceptType); -> Core
         virtual TConceptSource GetConceptSource();
         virtual void SetConceptSource(TConceptSource csAConceptSource);
-        virtual void SetName(string sAName);
-        string GetName();
-        string GetSmallName();
-        string GetAgentQualifiedName();
+        virtual void SetName(string sAName); -> Core
+        string GetName(); -> Core
+        string GetSmallName(); -> Used by GroundingManagerAgent's PrecomputeBeliefUpdatingFeatures
+        string GetAgentQualifiedName(); -> Used inside and by GroundingManagerAgent and DMCoreAgent
         virtual void SetOwnerDialogAgent(CDialogAgent* pADialogAgent);
         CDialogAgent* GetOwnerDialogAgent();
         virtual void SetOwnerConcept(CConcept* pAConcept);
         CConcept* GetOwnerConcept();
-        virtual void CreateGroundingModel(string sGroundingModelSpec); -> CreateDialogTree diagram
+        virtual void CreateGroundingModel(string sGroundingModelSpec); -> used in DTT's CreateDialogTree; as in the DialogAgent method, a Concept shouldn't be responsible of the creation of grounding models
         CGMConcept* GetGroundingModel(); -> Used by GroundingManagerAgent and DMCoreAgent
-        virtual void SetGroundedFlag(bool bAGrounded); -> used by NotifyChange
-        virtual bool GetGroundedFlag();
+        virtual void SetGroundedFlag(bool bAGrounded); -> used by NotifyChange, the bGrounded flag is only useful in the IsUpdatedAndGrounded; this method is too much complex.
+        virtual bool GetGroundedFlag(); Used in MergeHistory
         virtual void DeclareGroundingModels(TGroundingModelPointersVector& rgmpvModels, TGroundingModelPointersSet& rgmpsExclude);
         virtual void DeclareConcepts(TConceptPointersVector& rcpvConcepts, TConceptPointersSet& rcpsExclude);
         virtual void SetInvalidatedFlag(bool bAInvalidated); -> used by NotifyChange
@@ -286,48 +286,48 @@ file: Concepts/Concept.h
         virtual void SetChangeNotification(bool bAChangeNotification);
         virtual void NotifyChange(); -> used in performConceptBinding
         virtual CHyp* HypFactory(); -> used in Update
-        virtual int AddHyp(CHyp* pAHyp);
-        virtual int AddNewHyp(); -> used in Update
+        virtual int AddHyp(CHyp* pAHyp); -> Core behaviour
+        virtual int AddNewHyp(); -> Core behaviour
         virtual int AddNullHyp();
-        virtual void SetHyp(int iIndex, CHyp* pHyp);
+        virtual void SetHyp(int iIndex, CHyp* pHyp); -> Core behaviour
         virtual void SetNullHyp(int iIndex);
-        virtual void DeleteHyp(int iIndex);
-        virtual CHyp* GetHyp(int iIndex);
+        virtual void DeleteHyp(int iIndex); -> Core behaviour
+        virtual CHyp* GetHyp(int iIndex); -> Core behaviour, used by GroundingManager
         virtual int GetHypIndex(CHyp* pHyp);
         virtual float GetHypConfidence(int iIndex);
-        virtual void SetHypConfidence(int iIndex, float fConfidence);
-        virtual CHyp* GetTopHyp(); -> used in performConceptUpdates
-        virtual int GetTopHypIndex();
+        virtual void SetHypConfidence(int iIndex, float fConfidence); -> Core, used inside
+        virtual CHyp* GetTopHyp(); -> used inside, in subclasses and in performConceptUpdates
+        virtual int GetTopHypIndex(); -> used inside and in PrecomputeBeliefUpdatingFeatures
         virtual int Get2ndHypIndex();
-        virtual float GetTopHypConfidence();
+        virtual float GetTopHypConfidence(); -> used only by GMConcept
         virtual bool IsValidHyp(int iIndex);
-        virtual int GetNumHyps();
-        virtual int GetNumValidHyps();
+        virtual int GetNumHyps(); -> core, used inside
+        virtual int GetNumValidHyps(); -> is only used inside the normal Update to set the invalidated flag
         virtual void ClearCurrentHypSet(); -> used in performConceptBinding and nearly all subclasses
-        virtual void CopyCurrentHypSetFrom(CConcept& rAConcept);
+        virtual void CopyCurrentHypSetFrom(CConcept& rAConcept); -> Core, used in Clone, Update and SetGroundedFlag
         virtual void SetCardinality(int iACardinality);
         virtual int GetCardinality();
-        virtual float GetPriorForHyp(CHyp* pHyp);
-        virtual float GetConfusabilityForHyp(CHyp* pHyp);
-        virtual string GetConceptTypeInfo();
-        virtual void SetExplicitlyConfirmedHyp(CHyp* pHyp);
+        virtual float GetPriorForHyp(CHyp* pHyp); -> used by GroundingManager.PrecomputeBeliefUpdatingFeatures
+        virtual float GetConfusabilityForHyp(CHyp* pHyp); -> used by GroundingManager.PrecomputeBeliefUpdatingFeatures
+        virtual string GetConceptTypeInfo(); -> this is not the ctConceptType attribute, it's an abstraction implemented in the GroundingManager that is only used by the GroundingManager
+        virtual void SetExplicitlyConfirmedHyp(CHyp* pHyp); -> Used in the updating process
         virtual void SetExplicitlyConfirmedHyp(string sAExplicitlyConfirmedHyp);
         virtual void SetExplicitlyDisconfirmedHyp(CHyp* pHyp);
-        virtual void SetExplicitlyDisconfirmedHyp(string sAExplicitlyDisconfirmedHyp);
-        virtual string GetExplicitlyConfirmedHypAsString();
-        virtual string GetExplicitlyDisconfirmedHypAsString();
+        virtual void SetExplicitlyDisconfirmedHyp(string sAExplicitlyDisconfirmedHyp); -> Used in the updating process
+        virtual string GetExplicitlyConfirmedHypAsString(); -> Used in CopyCurrentHypSetFrom
+        virtual string GetExplicitlyDisconfirmedHypAsString(); -> Used in CopyCurrentHypSetFrom
         virtual void ClearExplicitlyConfirmedHyp();
         virtual void ClearExplicitlyDisconfirmedHyp();
-        virtual int AddPartialHyp(CHyp* pAHyp);
+        virtual int AddPartialHyp(CHyp* pAHyp); -> used only by StructConcept
         virtual int AddNewPartialHyp(); -> used in Update_PartialFromString
-        virtual int AddNullPartialHyp();
-        virtual bool HasPartialHyp();
-        virtual CHyp* GetPartialHyp(int iIndex);
+        virtual int AddNullPartialHyp(); -> used only by StructConcept
+        virtual bool HasPartialHyp(); -> used only by StructConcept
+        virtual CHyp* GetPartialHyp(int iIndex); -> used only by StructConcept
         virtual CHyp* GetTopPartialHyp();
         virtual int GetTopPartialHypIndex();
         virtual float GetTopPartialHypConfidence();
         bool IsValidPartialHyp(int iIndex);
-        virtual int GetNumPartialHyps();
+        virtual int GetNumPartialHyps(); -> used only by StructConcept
         virtual int GetNumValidPartialHyps();
         virtual void ClearPartialHypSet();
         virtual void SetTurnLastUpdated(int iTurn); -> used in NotifyChange
@@ -338,15 +338,15 @@ file: Concepts/Concept.h
         void ClearWaitingConveyance(); -> used by NotifyChange
         virtual void SetConveyance(TConveyance cConveyance);
         TConveyance GetConveyance();
-        virtual void ClearConceptNotificationPointer();
+        virtual void ClearConceptNotificationPointer(); -> used by subclasses
         virtual void ReOpen(); -> called by ReOpenConcept in DialogAgent
         virtual void Restore(int iIndex);
-        virtual void ClearHistory();
+        virtual void ClearHistory(); -> used by the normal update process, Restore and MergeHistory
         virtual CConcept* CreateMergedHistoryConcept();
         virtual void MergeHistory();
-        int GetHistorySize();
+        int GetHistorySize(); -> used in GroundingManager.PrecomputeBeliefUpdatingFeatures
         virtual CConcept& GetHistoryVersion(int iIndex);
-        virtual void SetHistoryConcept(bool bAHistoryConcept);
+        virtual void SetHistoryConcept(bool bAHistoryConcept); -> used by subclasses and inside
         virtual bool IsHistoryConcept();
         virtual int GetSize();
         virtual void DeleteAt(unsigned int iIndex);
@@ -514,7 +514,7 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         virtual string GetBeliefUpdatingModelName();
         virtual STRING2FLOATVECTOR& GetBeliefUpdatingModelForAction(string sSystemAction);
         virtual float GetConstantParameter(string sParam);
-        virtual void PrecomputeBeliefUpdatingFeatures(CConcept* pIConcept, CConcept* pNewConcept, string sSystemAction);
+        virtual void PrecomputeBeliefUpdatingFeatures(CConcept* pIConcept, CConcept* pNewConcept, string sSystemAction); -> used by the normal belief updating process
         virtual float GetGroundingFeature(string sFeatureName);
         virtual string GetGroundingFeatureAsString(string sFeatureName);
         virtual void ClearBeliefUpdatingFeatures();

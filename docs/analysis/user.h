@@ -245,7 +245,7 @@ file: Concepts/Concept.h
         virtual void Update_Calista_UpdateWithConcept(void* pUpdateData);
         virtual void Update_Calista_CollapseToMode(void* pUpdateData);
         virtual bool IsUpdated();
-        virtual bool IsUpdatedAndGrounded();
+        virtual bool IsUpdatedAndGrounded(); -> used by UPDATED and NOT_UPDATED
         virtual bool IsAvailable();
         virtual bool IsAvailableAndGrounded();
         virtual bool HasPartialUpdate();
@@ -263,7 +263,7 @@ file: Concepts/Concept.h
         virtual void SetName(string sAName);
         string GetName();
         string GetSmallName();
-        string GetAgentQualifiedName();
+        string GetAgentQualifiedName(); -> Used by multiple GroundingActions
         virtual void SetOwnerDialogAgent(CDialogAgent* pADialogAgent); -> called in CreateDialogTree by the TRIGGERED_BY_COMMANDS definition
         CDialogAgent* GetOwnerDialogAgent();
         virtual void SetOwnerConcept(CConcept* pAConcept);
@@ -296,7 +296,7 @@ file: Concepts/Concept.h
         virtual int GetHypIndex(CHyp* pHyp);
         virtual float GetHypConfidence(int iIndex);
         virtual void SetHypConfidence(int iIndex, float fConfidence);
-        virtual CHyp* GetTopHyp();
+        virtual CHyp* GetTopHyp(); -> used in GroundingActions
         virtual int GetTopHypIndex();
         virtual int Get2ndHypIndex();
         virtual float GetTopHypConfidence();
@@ -307,8 +307,8 @@ file: Concepts/Concept.h
         virtual void CopyCurrentHypSetFrom(CConcept& rAConcept);
         virtual void SetCardinality(int iACardinality);
         virtual int GetCardinality();
-        virtual float GetPriorForHyp(CHyp* pHyp);
-        virtual float GetConfusabilityForHyp(CHyp* pHyp);
+        virtual float GetPriorForHyp(CHyp* pHyp); -> can be defined by DEFINE_PRIOR
+        virtual float GetConfusabilityForHyp(CHyp* pHyp); -> can be defined DEFINE_CONFUSABILITY
         virtual string GetConceptTypeInfo();
         virtual void SetExplicitlyConfirmedHyp(CHyp* pHyp);
         virtual void SetExplicitlyConfirmedHyp(string sAExplicitlyConfirmedHyp);
@@ -333,14 +333,14 @@ file: Concepts/Concept.h
         virtual void SetTurnLastUpdated(int iTurn);
         virtual void MarkTurnLastUpdated();
         virtual int GetTurnLastUpdated();
-        int GetTurnsSinceLastUpdated();
+        int GetTurnsSinceLastUpdated(); -> Used by TURNS_SINCE_LAST_UPDATED, UPDATED_IN_LAST_TURN, UPDATED_IN_PENULTIMATE_TURN
         void SetWaitingConveyance();
         void ClearWaitingConveyance();
         virtual void SetConveyance(TConveyance cConveyance);
         TConveyance GetConveyance();
         virtual void ClearConceptNotificationPointer();
         virtual void ReOpen(); -> called by REOPEN_CONCEPT
-        virtual void Restore(int iIndex);
+        virtual void Restore(int iIndex); -> called in RESTORE_CONCEPT
         virtual void ClearHistory();
         virtual CConcept* CreateMergedHistoryConcept();
         virtual void MergeHistory();

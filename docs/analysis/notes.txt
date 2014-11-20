@@ -82,7 +82,6 @@ Concept.cpp
     + GetHistoryVersion is a synonym of operator[]
     + The GetSize, DeleteAt and InsertAt are only valid for the ArrayConcept, why are they defined in the Concept class?
 
-
 DMCoreAgent.cpp
     + The iTimeoutPeriod abstraction is not used
     + The iDefaultTimeoutPeriod is only used by the user and MARequest
@@ -94,7 +93,7 @@ DMCoreAgent.cpp
     + No one is using RegisterCustomStartOver
     + The Get*Agent abstraction to query the ExecutionStack is hardly used and it's duplicated all over the place
     + The Pop*FromExecutionStack agent is badly designed. No one uses PopGroundingAgentsFromExecutionStack
-    + The saSystemAction abstraction is fed by the GroundingActions and they are used in the Updating belief process
+    + The saSystemAction abstraction is fed by the GroundingActions or computeCurrentSystemAction (which no one calls) and they are used after in the Updating belief process
     + No one uses dumpConcepts, but this might be useful for debugging
     + No one uses dumpExecutionStack, nor executionStackToString for that matter
     + The dependency to windows is in the updateInputLineConfiguration
@@ -105,4 +104,10 @@ DMCoreAgent.cpp
 DTTManagerAgent.cpp
     + Is a vector (vdaiDAInfo) the best representation of the tree?
     + How works the declaration of libraries?
-    + 
+    + The Mount family is only used when creating the dialog tree
+    + UnMountAgent is never used
+    + The methods related to querying the hierarchy are based on string matching, most of them use GetParentName and none of them are used
+    + IsAncestorOf == IsDescendantOf
+
+TrafficManagerAgnet.cpp
+    + No one uses this class

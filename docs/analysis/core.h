@@ -470,17 +470,17 @@ file: Agents/CoreAgents/DTTManagerAgent.h
         static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
         virtual void Reset(); -> Core
         void Use(string sDAType, string sDAName, FRegisterAgent fRegisterAgent, string sConfiguration); -> DMCore thread diagram
-        void CreateDialogTree(); -> DMCore thread diagram
-        void DestroyDialogTree(); -> used by StartOver
-        void ReCreateDialogTree(); -> used by StartOver
+        void CreateDialogTree(); -> Used in DMCoreAgent's Execute and StartOver
+        void DestroyDialogTree(); -> used by DMCoreAgent.StartOver
+        void ReCreateDialogTree(); -> used by DMCoreAgent.StartOver
         void CreateDialogTaskTree();
         void CreateDialogTaskAgentome();
-        CDialogAgent* GetDialogTaskTreeRoot(); -> Used only by DMCoreAgent
-        void MountAgent(CDialogAgent* pdaWhere, CDialogAgent* pdaWho, TMountingMethod mmHow, string sDynamicAgentID); -> CreateDialogTree diagram
-        CDialogAgent* MountAgent(CDialogAgent* pWhere, string sAgentType, string sAgentName, string sAConfiguration, TMountingMethod mmHow, string sDynamicAgentID); -> CreateDialogTree diagram
+        CDialogAgent* GetDialogTaskTreeRoot(); -> Used only by DMCoreAgent's Execute, computeCurrentSystemAction, assembleFocusClaims and StartOver
+        void MountAgent(CDialogAgent* pdaWhere, CDialogAgent* pdaWho, TMountingMethod mmHow, string sDynamicAgentID); -> called in (Re)CreateDialogTree
+        CDialogAgent* MountAgent(CDialogAgent* pWhere, string sAgentType, string sAgentName, string sAConfiguration, TMountingMethod mmHow, string sDynamicAgentID); -> called in (Re)CreateDialogTree
         void UnMountAgent(CDialogAgent* pdaWho);
-        void MountAgentsFromArrayConcept(CDialogAgent *pdaParent, string sArrayConceptName, string sAgentsType, string sAgentsName, string sAgentsConceptName, string sAgentsDynamicID);
-        string GetParentName(string sAgentPath);
+        void MountAgentsFromArrayConcept(CDialogAgent *pdaParent, string sArrayConceptName, string sAgentsType, string sAgentsName, string sAgentsConceptName, string sAgentsDynamicID); -> called in (Re)CreateDialogTree
+        string GetParentName(string sAgentPath); -> used inside the class
         bool IsParentOf(string sParentAgentPath, string sAgentPath);
         bool IsChildOf(string sChildAgentPath, string sAgentPath);
         bool IsAncestorOf(string sAncestorAgentPath, string sAgentPath);

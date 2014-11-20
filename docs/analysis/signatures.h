@@ -393,13 +393,19 @@ file: Agents/CoreAgents/DMCoreAgent.h
         void SignalFocusClaimsPhase(bool bAFocusClaimsPhaseFlag);
         void SetFloorStatus(TFloorStatus fsaFloorStatus);
         TFloorStatus GetFloorStatus();
-        void CDMCoreAgent::SetFloorStatus(string sAFloorStatus);
         string FloorStatusToString(TFloorStatus fsAFloor);
         TFloorStatus StringToFloorStatus(string sAFloor);
+
+        // API of History
         int LastTurnGetConceptsBound();
         bool LastTurnNonUnderstanding();
         int GetNumberNonUnderstandings();
         int GetTotalNumberNonUnderstandings();
+        int GetBindingHistorySize();
+        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
+        int GetLastInputTurnNumber();
+
+        // API of ExecutionStack
         void ContinueWith(CAgent* paPusher, CDialogAgent* pdaDialogAgent);
         void RestartTopic(CDialogAgent* pdaDialogAgent);
         void RegisterCustomStartOver(TCustomStartOverFunct csoAStartOverFunct);
@@ -414,14 +420,15 @@ file: Agents/CoreAgents/DMCoreAgent.h
         void PopAgentFromExecutionStack(CDialogAgent* pdaADialogAgent);
         void PopTopicFromExecutionStack(CDialogAgent* pdaADialogAgent);
         void PopGroundingAgentsFromExecutionStack();
-        int GetBindingHistorySize();
-        const TBindingsDescr& GetBindingResult(int iBindingHistoryIndex);
-        int GetLastInputTurnNumber();
+
+        // API of System Actions
         TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
         void SignalExplicitConfirmOnConcept(CConcept* pConcept);
         void SignalImplicitConfirmOnConcept(CConcept* pConcept);
         void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
         void SignalAcceptOnConcept(CConcept* pConcept);
+
+        // Private API
         int popCompletedFromExecutionStack();
         void popAgentFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);
         void popTopicFromExecutionStack(CDialogAgent *pdaADialogAgent, TStringVector& rvsAgentsEliminated);

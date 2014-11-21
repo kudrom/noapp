@@ -510,13 +510,17 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         CGroundingManagerAgent(string sAName, string sAConfiguration, string sAType);
         virtual ~CGroundingManagerAgent();
         static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        void SetConfiguration(string sAGroundingManagerConfiguration);
+
+        // Manage policies
+        void SetConfiguration(string sAGroundingManagerConfiguration); -> used by GroundingActions
         TGroundingManagerConfiguration GetConfiguration();
         virtual void LoadPoliciesFromString(string sPolicies);
         virtual void LoadPoliciesFromFile(string sFileName);
         virtual string GetPolicy(string sModelName);
         CExternalPolicyInterface* CreateExternalPolicyInterface(string sAHost);
         void ReleaseExternalPolicyInterfaces();
+
+        // Manage belief updating models
         virtual void LoadBeliefUpdatingModel(string sAFileName);
         virtual void SetBeliefUpdatingModelName(string sABeliefUpdatingModelName);
         virtual string GetBeliefUpdatingModelName();
@@ -529,28 +533,25 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         virtual float GetPriorForConceptHyp(string sConcept, string sHyp);
         virtual float GetConfusabilityForConceptHyp(string sConcept, string sHyp);
         virtual string GetConceptTypeInfoForConcept(string sConcept);
-        void UseGroundingAction(string sActionName, GroundingAction* pgaAGroundingAction);
+
+        // Manage vpgaActions
+        void UseGroundingAction(string sActionName, GroundingAction* pgaAGroundingAction); -> used by GROUNDING_ACTION
         int GroundingActionNameToIndex(string sGroundingActionName);
         string GroundingActionIndexToName(unsigned int iGroundingActionIndex);
         CGroundingAction* operator[] (string sGroundingActionName);
         CGroundingAction* operator[] (unsigned int iGroundingActionIndex);
+
+        // Handle requests
         void RequestTurnGrounding(bool bATurnGroundingRequest);
         void RequestConceptGrounding(CConcept* pConcept);
         string ScheduleConceptGrounding(CConcept* pConcept);
         void LockConceptGroundingRequestsQueue();
         void UnlockConceptGroundingRequestsQueue();
-        void SetConceptGroundingRequestStatus(CConcept* pConcept, int iAGroundingRequestStatus);
+        void SetConceptGroundingRequestStatus(CConcept* pConcept, int iAGroundingRequestStatus); -> used in GroundingActions to set the status to GRS_EXECUTING
         int GetConceptGroundingRequestStatus(CConcept* pConcept);
-        void ConceptGroundingRequestCompleted(CConcept* pConcept);
+        void ConceptGroundingRequestCompleted(CConcept* pConcept); -> used in GroundingActions
         void RemoveConceptGroundingRequest(CConcept* pConcept);
         void PurgeConceptGroundingRequestsQueue();
-        void GAHAddHistoryItem(string sGroundingModelName, string sActionName, int iGroundingActionType);
-        void GAHSetBargeInFlag(int iTurnNum, bool bBargeInFlag);
-        string GAHGetTurnGroundingAction(int iTurnNumber);
-        int GAHCountTakenInLastNTurns(bool bAlsoHeard, string sActionName, int iNumTurns);
-        int GAHCountTakenByGroundingModelInLastNTurns(bool bAlsoHeard, string sActionName, string sGroundingModelName, int iNumTurns);
-        void RegisterGroundingModelType(string sName, FCreateGroundingModel fctCreateGroundingModel);
-        CGroundingModel* CreateGroundingModel(string sModelType, string sModelPolicy);
         bool HasPendingRequests();
         bool HasPendingTurnGroundingRequest();
         bool HasPendingConceptGroundingRequests();
@@ -559,7 +560,19 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         bool HasExecutingConceptGroundingRequests();
         bool GroundingInProgressOnConcept(CConcept* pConcept);
         string GetScheduledGroundingActionOnConcept(CConcept* pConcept);
+
+        // Manage history
+        void GAHAddHistoryItem(string sGroundingModelName, string sActionName, int iGroundingActionType);
+        void GAHSetBargeInFlag(int iTurnNum, bool bBargeInFlag);
+        string GAHGetTurnGroundingAction(int iTurnNumber);
+        int GAHCountTakenInLastNTurns(bool bAlsoHeard, string sActionName, int iNumTurns);
+        int GAHCountTakenByGroundingModelInLastNTurns(bool bAlsoHeard, string sActionName, string sGroundingModelName, int iNumTurns);
+
+        void RegisterGroundingModelType(string sName, FCreateGroundingModel fctCreateGroundingModel); -> used by GROUNDING_MODEL_TYPE
+        CGroundingModel* CreateGroundingModel(string sModelType, string sModelPolicy);
         virtual void Run();
+
+        // Private API
         int getConceptGroundingRequestIndex(CConcept* pConcept);
         string loadPolicy(string sFileName);
 

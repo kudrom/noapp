@@ -114,3 +114,6 @@ The main points are:
 20/11/2014
     + Where are the dependencies to windows in each file?
     + Doublecheck the constructor/destructors of all core agents
+
+21/11/2014
+    + How is d-bus integrated?

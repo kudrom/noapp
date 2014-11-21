@@ -62,6 +62,7 @@ Concept.cpp
     + The Explicitly abstraction is only used by Calista through the GroundingManager's PrecomputeBeliefUpdatingFeatures, which uses the getters, however the implementation is scattered throught the entire Concept class.
     + The bHistoryConcept checks if the concept is in the history, the pPrevConcept attribute is a link to the last Concept in the history, which has a different set of Hyps. This is used mostly by Calista.
     + No one uses HasPartialUpdate
+    + IsUndergoingGrounding is a wrapper around GroundingManager.GroundingInProgressOnConcept
     + IsGrounded is only used by IsUpdatedAndGrounded, which is used mostly inside but also by DialogAgents.
     + There is no clean interface of the Is* methods, the uses should be study to provide a coherent interface
     + The Hyp(Set)ToString family of methods is used mostly for logging.
@@ -108,6 +109,32 @@ DTTManagerAgent.cpp
     + UnMountAgent is never used
     + The methods related to querying the hierarchy are based on string matching, most of them use GetParentName and none of them are used
     + IsAncestorOf == IsDescendantOf
+
+GroundingManagerAgent.cpp
+    + Where is s2sPolicies used? -> it's called in GroundingModel.LoadPolicy
+    + GetConfiguration is only used to query bGroundConcepts in CreateGroundingModel in Concept and DialogAgent
+    + The policies are only used in GroundingModels to setup its attributes
+    + LoadBeliefUpdatingModel populates s2sConceptTypeInfo, s2fConstantParameters, s2s2vfBeliefUpdatingModels and s2s2vfConceptValuesInfo and is called by SetBeliefUpdatingModelName which is called by SetConfiguration if the config has a beliefupdatingmodel slot
+    + No one is using GetGroundingFeatureAsString
+    + PrecomputeBeliefUpdatingFeatures populates s2fBeliefUpdatingFeatures
+    + GetPriorForConceptHyp is used by Concept.GetPriorForHyp which is used by PrecomputeBeliefUpdatingFeatures. The same happens with the Confusability
+    + The locking mechanism uses a boolean variable which isn't atomic
+    + To request a concept grounding the ScheduleConceptGrounding is first called, when the GroundingAction is executed it sets the status to GRS_EXECUTING, when it has completed it calls to ConceptGroundingRequestCompleted and finally the completed requests are eliminated with the Run's call to PurgeConceptGroundingRequestsQueue.
+    + The published interface to fill a request is RequestTurnGrounding and ScheduleConceptGrounding
+    + Except GetGroundingFeature, no one is using the history
+
+GroundingModel.cpp
+    + The type shouldn't be a string attribute, furthermore it's only subclassed but hardly used in the code; it's the same for the name
+    + The Clone method is defined by subclasses
+    + The Run method is never used, it's always used RunAction
+
+GroundingUtils.cpp
+    + CState is only used by some GroundingModels
+    + The CBeliefDistribution is only used by the GroundingModels
+
+StateManagerAgent.cpp
+    + the s2sDialogStateNames is an optional map loaded from a file with the LoadDialogStateNames method
+    + no one is setting the broadcast address and no method is using it
 
 TrafficManagerAgnet.cpp
     + No one uses this class

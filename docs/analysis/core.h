@@ -223,7 +223,7 @@ file: Concepts/Concept.h
         virtual bool operator > (CConcept& rAConcept); -> Core behaviour
         virtual bool operator <= (CConcept& rAConcept); -> Core behaviour
         virtual bool operator >= (CConcept& rAConcept); -> Core behaviour
-        virtual CConcept& operator [](int iIndex); -> Core behaviour
+        virtual CConcept& operator [](int iIndex); -> Core behaviour, used by GroundingManager.PrecomputeBeliefUpdatingFeatures
         virtual CConcept& operator [](string sIndex); -> Core behaviour
         virtual CConcept& operator [](const char* lpszIndex); -> Core behaviour
         virtual operator int(); -> Core behaviour
@@ -497,7 +497,7 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         STRING2STRING2FLOATVECTOR s2s2vfConceptValuesInfo;
         STRING2STRING s2sConceptTypeInfo;
         STRING2FLOAT s2fBeliefUpdatingFeatures;
-        vector < CGroundingAction * > vpgaActions;
+        vector <CGroundingAction *> vpgaActions;
         TStringVector vsActionNames;
         TExternalPolicies mapExternalPolicies;
         TGroundingManagerConfiguration gmcConfig; -> Used in CreateDialogTree diagram by the root DialogAgency
@@ -507,35 +507,43 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         vector<TGroundingActionHistoryItems> vgahiGroundingActionsHistory; -> Used inside this class
         TGroundingModelsTypeHash gmthGroundingModelTypeRegistry;
     BEHAVIOUR:
-        CGroundingManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CGroundingManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        void SetConfiguration(string sAGroundingManagerConfiguration);
-        TGroundingManagerConfiguration GetConfiguration(); -> CreateDialogTree diagram
-        virtual void LoadPoliciesFromString(string sPolicies);
-        virtual void LoadPoliciesFromFile(string sFileName);
-        virtual string GetPolicy(string sModelName);
-        CExternalPolicyInterface* CreateExternalPolicyInterface(string sAHost);
-        void ReleaseExternalPolicyInterfaces();
-        virtual void LoadBeliefUpdatingModel(string sAFileName);
-        virtual void SetBeliefUpdatingModelName(string sABeliefUpdatingModelName);
-        virtual string GetBeliefUpdatingModelName();
-        virtual STRING2FLOATVECTOR& GetBeliefUpdatingModelForAction(string sSystemAction);
-        virtual float GetConstantParameter(string sParam);
+        CGroundingManagerAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~CGroundingManagerAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+
+        // Manage policies
+        void SetConfiguration(string sAGroundingManagerConfiguration); used in DMCore.InitializeDialogCore
+        TGroundingManagerConfiguration GetConfiguration(); -> used by CreateGroundingModel of DialogAgent and Concept
+        virtual void LoadPoliciesFromString(string sPolicies); -> used in DMCore.InitializeDialogCore
+        virtual void LoadPoliciesFromFile(string sFileName); -> used in DMCore.InitializeDialogCore
+        virtual string GetPolicy(string sModelName); -> used in GroundingModels to LoadPolicy
+        CExternalPolicyInterface* CreateExternalPolicyInterface(string sAHost); -> used in GroundingModels to LoadPolicy
+        void ReleaseExternalPolicyInterfaces(); -> used in the destructor
+
+        // Manage belief updating models
+        virtual void LoadBeliefUpdatingModel(string sAFileName); -> called by SetBeliefUpdatingModelName
+        virtual void SetBeliefUpdatingModelName(string sABeliefUpdatingModelName); -> called by SetConfiguration
+        virtual string GetBeliefUpdatingModelName(); -> Used in Concept.Update
+        virtual STRING2FLOATVECTOR& GetBeliefUpdatingModelForAction(string sSystemAction); -> used in calista
+        virtual float GetConstantParameter(string sParam); -> used in PrecomputeBeliefUpdatingFeatures
         virtual void PrecomputeBeliefUpdatingFeatures(CConcept* pIConcept, CConcept* pNewConcept, string sSystemAction); -> used by the normal belief updating process
-        virtual float GetGroundingFeature(string sFeatureName);
+        virtual float GetGroundingFeature(string sFeatureName); -> used in calista
         virtual string GetGroundingFeatureAsString(string sFeatureName);
-        virtual void ClearBeliefUpdatingFeatures();
+        virtual void ClearBeliefUpdatingFeatures(); -> used in calista
         virtual float GetPriorForConceptHyp(string sConcept, string sHyp);
         virtual float GetConfusabilityForConceptHyp(string sConcept, string sHyp);
-        virtual string GetConceptTypeInfoForConcept(string sConcept);
+        virtual string GetConceptTypeInfoForConcept(string sConcept); -> used by Concept.GetConceptTypeInfo
+
+        // Manage vpgaActions
         void UseGroundingAction(string sActionName, GroundingAction* pgaAGroundingAction);
-        int GroundingActionNameToIndex(string sGroundingActionName);
-        string GroundingActionIndexToName(unsigned int iGroundingActionIndex);
-        CGroundingAction* operator[] (string sGroundingActionName);
+        int GroundingActionNameToIndex(string sGroundingActionName); -> used in GroundingModel's ComputeSuggestedActionIndex and LoadPolicy
+        string GroundingActionIndexToName(unsigned int iGroundingActionIndex); -> used in GroundingModel's LogStateAction and actionValuesToString plus ScheduleConceptGrounding, GetScheduledGroundingActiononConcept and Run
+        CGroundingAction* operator[] (string sGroundingActionName); -> Core
         CGroundingAction* operator[] (unsigned int iGroundingActionIndex); -> used by GroundingModel in RunAction
+
+        // Handle requests
         void RequestTurnGrounding(bool bATurnGroundingRequest); -> used by AcquireNextEvent
-        void RequestConceptGrounding(CConcept* pConcept); -> used by Concept's NotifyChange
+        void RequestConceptGrounding(CConcept* pConcept); -> used by Concept's NotifyChange and ScheduleConceptGrounding
         string ScheduleConceptGrounding(CConcept* pConcept); -> used by GAExplicitConfirm, Update_Calista_UpdateWithConcept and performForcedConceptUpdates
         void LockConceptGroundingRequestsQueue(); -> Used by ScheduleConceptGrounding and Run
         void UnlockConceptGroundingRequestsQueue(); -> Used by ScheduleConceptGrounding and Run
@@ -544,45 +552,50 @@ file: Agents/CoreAgents/GroundingManagerAgent.h
         void ConceptGroundingRequestCompleted(CConcept* pConcept);
         void RemoveConceptGroundingRequest(CConcept* pConcept); -> used in performConceptBinding
         void PurgeConceptGroundingRequestsQueue(); -> Used in Run diagram
+        bool HasPendingRequests(); -> used by DMCore.Execute
+        bool HasPendingTurnGroundingRequest(); -> used by HasPendingRequests
+        bool HasPendingConceptGroundingRequests(); -> used by HasPendingRequests
+        bool HasUnprocessedConceptGroundingRequests(); -> used by DMCore.Execute
+        bool HasScheduledConceptGroundingRequests(); -> used by DMCore's Execute and assembleFocusClaims
+        bool HasExecutingConceptGroundingRequests();
+        bool GroundingInProgressOnConcept(CConcept* pConcept); -> used by Concept.IsUndergoingGrounding
+        string GetScheduledGroundingActionOnConcept(CConcept* pConcept); -> used in performForcedConcepUpdates
+
+        // Manage history
         void GAHAddHistoryItem(string sGroundingModelName, string sActionName, int iGroundingActionType); -> used in GroundingManagerAgent's Run
         void GAHSetBargeInFlag(int iTurnNum, bool bBargeInFlag);
-        string GAHGetTurnGroundingAction(int iTurnNumber);
+        string GAHGetTurnGroundingAction(int iTurnNumber); -> used by GetGroundingFeature
         int GAHCountTakenInLastNTurns(bool bAlsoHeard, string sActionName, int iNumTurns);
         int GAHCountTakenByGroundingModelInLastNTurns(bool bAlsoHeard, string sActionName, string sGroundingModelName, int iNumTurns);
+
         void RegisterGroundingModelType(string sName, FCreateGroundingModel fctCreateGroundingModel);
         CGroundingModel* CreateGroundingModel(string sModelType, string sModelPolicy); -> CreateDialogTree diagram
-        bool HasPendingRequests(); -> DMCore thread diagram
-        bool HasPendingTurnGroundingRequest();
-        bool HasPendingConceptGroundingRequests();
-        bool HasUnprocessedConceptGroundingRequests(); -> DMCore thread diagram
-        bool HasScheduledConceptGroundingRequests(); -> DMCore thread diagram and assembleFocusClaims
-        bool HasExecutingConceptGroundingRequests();
-        bool GroundingInProgressOnConcept(CConcept* pConcept);
-        string GetScheduledGroundingActionOnConcept(CConcept* pConcept); -> used in performForcedConcepUpdates
-        virtual void Run(); -> DMCore thread diagram
-        int getConceptGroundingRequestIndex(CConcept* pConcept);
-        string loadPolicy(string sFileName);
+        virtual void Run(); -> used by DMCore.Execute
+
+        // Private API
+        int getConceptGroundingRequestIndex(CConcept* pConcept); -> used throught the entire class
+        string loadPolicy(string sFileName); -> used by LoadPoliciesFrom{String,File}
 
 file: Grounding/GroundingModels/GroundingModel.h
     class CGroundingModel
     DATA:
-        string sName;
-        string sModelPolicy;
+        string sName; -> Core
+        string sModelPolicy; -> used in subclasses
         TPolicy pPolicy; -> Used in ComputeActionValuesDistribution
         bool bExternalPolicy; -> Used in ComputeSuggestedActionIndex
         CExternalPolicyInterface* pepiExternalPolicy;
         string sExternalPolicyHost;
         vector<int> viActionMappings; -> used in subclasses and ComputeActionValuesDistribution
-        string sExplorationMode;
-        float fExplorationParameter;
-        CState stFullState;
+        string sExplorationMode; -> used in subclasses
+        float fExplorationParameter; -> used in subclasses
+        CState stFullState; -> used in subclasses
         CBeliefDistribution bdBeliefState; -> used in subclasses
         CBeliefDistribution bdActionValues; -> used in subclasses and ComputeActionValuesDistribution
         int iSuggestedActionIndex; -> result of the ComputeSuggestedActionIndex
     BEHAVIOUR:
-        CGroundingModel(string sAModelPolicy, string sAModelName);
-        CGroundingModel(CGroundingModel& rAGroundingModel);
-        virtual ~CGroundingModel();
+        CGroundingModel(string sAModelPolicy, string sAModelName); -> Core
+        CGroundingModel(CGroundingModel& rAGroundingModel); -> Core
+        virtual ~CGroundingModel(); -> Core
         static CGroundingModel* GroundingModelFactory(string sModelPolicy); -> CreateDialogTree diagram
         virtual string GetType();
         virtual string GetModelPolicy();
@@ -590,17 +603,17 @@ file: Grounding/GroundingModels/GroundingModel.h
         virtual void SetName(string sAName);
         virtual void Initialize(); -> CreateDialogTree diagram
         virtual CGroundingModel* Clone() = 0;
-        virtual bool LoadPolicy();
+        virtual bool LoadPolicy(); -> used in Initialize
         virtual void ComputeState(); -> used in Run diagram by GroundingManagerAgent
         virtual void ComputeActionValuesDistribution(); -> can be defined in subclasses, used in ComputeSuggestedActionIndex
         virtual int ComputeSuggestedActionIndex(); -> can be defined in subclasses, used by the GroundingManagerAgent in Run
         virtual void Run();
-        virtual void RunAction(int iActionIndex); Used by GroundingManagerAgent when the iActinIndex is computed and an action needs to be run
-        virtual void LogStateAction(); -> used in GroundingManagerAgent
+        virtual void RunAction(int iActionIndex); -> Used by GroundingManagerAgent when the iActinIndex is computed and an action needs to be run
+        virtual void LogStateAction(); -> used in GroundingManagerAgent, is subclassed
         virtual void computeFullState() = 0; -> defined in subclasses, used by ComputeState
         virtual void computeBeliefState() = 0; -> defined in subclasses, used by ComputeState
-        string beliefStateToString();
-        string actionValuesToString();
+        string beliefStateToString(); -> used in LogStateAction
+        string actionValuesToString(); -> used in LogStateAction and GMRequestAgent_LR
 
 file: Grounding/GroundingActions/GroundingAction.h
     class CGroundingAction
@@ -614,7 +627,7 @@ file: Grounding/GroundingActions/GroundingAction.h
         void SetConfiguration(string sNewConfiguration);
         string GetConfiguration();
         virtual void Run(void *pParams) = 0; -> Used by the GroundingModel in RunAction
-        virtual void RegisterDialogAgency() = 0;
+        virtual void RegisterDialogAgency() = 0; -> used by GroundingManager.UseGroundingAction
 
 file: Grounding/GroundingUtils.h
     class CState
@@ -628,44 +641,44 @@ file: Grounding/GroundingUtils.h
 
     class CBeliefDistribution
     DATA:
-        vector<float> vfProbability;
-        vector<float> vfProbabilityLowBound;
-        vector<float> vfProbabilityHiBound;
+        vector<float> vfProbability; -> Core attribute
+        vector<float> vfProbabilityLowBound; -> Core attribute
+        vector<float> vfProbabilityHiBound; -> Core attribute
     BEHAVIOUR:
-        CBeliefDistribution(int iNumEvents);
-        CBeliefDistribution(CBeliefDistribution& rbdABeliefDistribution);
-        ~CBeliefDistribution();
+        CBeliefDistribution(int iNumEvents); -> Core
+        CBeliefDistribution(CBeliefDistribution& rbdABeliefDistribution); -> Core
+        ~CBeliefDistribution(); -> Core
         void Resize(int iNumEvents);
         float& operator[] (unsigned int iIndex);
-        float& LowBound(unsigned int iIndex);
-        float& HiBound(unsigned int iIndex);
-        int GetValidEventsNumber();
-        void Normalize();
-        void Sharpen(float fPower);
-        int GetModeEvent();
-        int GetMaxHiBoundEvent();
-        int GetEpsilonGreedyEvent(float fEpsilon);
-        int GetSoftMaxEvent(float fTemperature);
-        int GetRandomlyDrawnEvent();
+        float& LowBound(unsigned int iIndex); -> Core
+        float& HiBound(unsigned int iIndex); -> Core
+        int GetValidEventsNumber(); -> Core
+        void Normalize(); -> Core
+        void Sharpen(float fPower); -> Core
+        int GetModeEvent(); -> Core
+        int GetMaxHiBoundEvent(); -> Core
+        int GetEpsilonGreedyEvent(float fEpsilon); -> Core
+        int GetSoftMaxEvent(float fTemperature); -> Core
+        int GetRandomlyDrawnEvent(); -> Core
 
 file: Agents/CoreAgents/StateManagerAgent.h
     class CStateManagerAgent : public CAgent
     DATA:
         STRING2STRING s2sDialogStateNames;
-        vector<TDialogState, allocator<TDialogState>> vStateHistory;
+        vector<TDialogState, allocator<TDialogState>> vStateHistory; -> Core
         string sStateBroadcastAddress;
     BEHAVIOUR:
-        CStateManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CStateManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        void LoadDialogStateNames(string sFileName);
+        CStateManagerAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~CStateManagerAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+        virtual void Reset(); -> Core
+        void LoadDialogStateNames(string sFileName); -> used by DMCore.InitializeDialogCore
         void SetStateBroadcastAddress(string sAStateBroadcastAddress);
-        void BroadcastState(); used by AcquireNextEvent
+        void BroadcastState(); -> used by AcquireNextEvent
         void UpdateState(); -> DMCore thread, AcquireNextEvent diagrams and StartOver
-        string GetStateAsString(TDialogState dsState);
-        string GetStateAsString();
-        int GetStateHistoryLength();
+        string GetStateAsString(TDialogState dsState); -> used by GetStateAsString()
+        string GetStateAsString(); -> used by BroadcastState and to log
+        int GetStateHistoryLength(); -> used by the OutputManager
         TDialogState &GetLastState(); -> Run diagram
         TDialogState &operator[](unsigned int i);
 

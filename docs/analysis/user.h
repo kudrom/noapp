@@ -738,7 +738,7 @@ file: Events/GalaxyInteractionEvent.h
         float GetFloatProperty(string sSlot);
         bool HasProperty(string sSlot);
         void SetProperty(string sSlot, string sValue);
-        STRING2STRING &GetProperties();
+        STRING2STRING &GetProperties(); -> used in some GroundingModels
         string ToString();
         bool Matches(string sGrammarExpectation);
         string GetValueForExpectation(string sGrammarExpectation);

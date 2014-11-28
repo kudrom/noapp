@@ -687,62 +687,62 @@ file: Agents/CoreAgents/InteractionEventManagerAgent.h
     DATA:
         HANDLE hNewInteractionEvent; -> Core attribute
         queue <CInteractionEvent*, list<CInteractionEvent*>> qpieEventQueue; -> Core attribute
-        vector <CInteractionEvent*> vpieEventHistory; -> Core attribute
+        vector <CInteractionEvent*> vpieEventHistory;
         CInteractionEvent *pieLastEvent; -> Core attribute
         CInteractionEvent *pieLastInput; -> Core attribute
     BEHAVIOUR:
-        CInteractionEventManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~CInteractionEventManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
-        virtual void Initialize();
+        CInteractionEventManagerAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~CInteractionEventManagerAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+        virtual void Reset(); -> Core
+        virtual void Initialize(); -> Core
         bool HasEvent();
-        CInteractionEvent *GetNextEvent(); -> used in AcquireNextEvent DMCoreAgent
-        CInteractionEvent *GetLastEvent(); -> used in bindConcepts' DMCoreAgent
+        CInteractionEvent *GetNextEvent(); -> used in DMCoreAgent.AcquireNextEvent
+        CInteractionEvent *GetLastEvent(); -> used in DMCoreAgent's bindConcepts
         CInteractionEvent *GetLastInput(); -> used by many Core Agents
-        bool LastEventMatches(string sGrammarExpectation); -> Used in bindConcepts' DMCoreAgent
+        bool LastEventMatches(string sGrammarExpectation); -> Used in DMCoreAgent's bindConcepts
         bool LastInputMatches(string sGrammarExpectation);
         bool LastEventIsComplete(); -> Used in bindConcepts' DMCoreAgent
-        float GetLastEventConfidence(); -> Used in bindConcepts' DMCoreAgent
-        string GetValueForExpectation(string sGrammarExpectation); -> used by many Core Agents
+        float GetLastEventConfidence(); -> Used in DMCoreAgent's bindConcepts
+        string GetValueForExpectation(string sGrammarExpectation); -> Used by DMCoreAgent.bindConcepts and Calista
         void WaitForEvent(); -> Used in AcquireNextEvent diagram
         void SignalInteractionEventArrived(); -> DMBridge thread
 
 file: Events/GalaxyInteractionEvent.h
     class CGalaxyInteractionEvent: public CInteractionEvent
     DATA:
-        void  *gfEvent;
+        void  *gfEvent; -> Core
     BEHAVIOUR:
-        CGalaxyInteractionEvent();
-        CGalaxyInteractionEvent(void *gfAEvent);
-        ~CGalaxyInteractionEvent();
-        void *GetEventFrame();
+        CGalaxyInteractionEvent(); -> Core
+        CGalaxyInteractionEvent(void *gfAEvent); -> Core
+        ~CGalaxyInteractionEvent(); -> Core
+        void *GetEventFrame(); -> Core
 
     class CInteractionEvent
     DATA:
-        string sType;
-        int iID;
-        bool bComplete;
-        float fConfidence;
-        STRING2STRING s2sProperties;
+        string sType; -> Core
+        int iID; -> Core
+        bool bComplete; -> Core
+        float fConfidence; -> Core
+        STRING2STRING s2sProperties; -> Core
     BEHAVIOUR:
-        CInteractionEvent();
-        CInteractionEvent(string sAType);
-        virtual ~CInteractionEvent();
-        string GetType();
+        CInteractionEvent(); -> Core
+        CInteractionEvent(string sAType); -> Core
+        virtual ~CInteractionEvent(); -> Core
+        string GetType(); -> used in DMCoreAgent.AcquireNextEvent
         int GetID();
-        bool IsComplete();
-        float GetConfidence();
-        string GetStringProperty(string sSlot);
-        int GetIntProperty(string sSlot);
+        bool IsComplete(); -> used by InteractionEventManager.LastEventIsComplete and DMCoreAgent.AcquireNextEvent
+        float GetConfidence(); -> used by InteractionEventManager.GetLastEventConfidence
+        string GetStringProperty(string sSlot); -> used in InteractionEventManager.WaitForEvent, DMCoreAgent.AcquireNextEvent and OutputManager.Output
+        int GetIntProperty(string sSlot); -> used in DMCoreAgent.AcquireNextEvent
         float GetFloatProperty(string sSlot);
         bool HasProperty(string sSlot);
         void SetProperty(string sSlot, string sValue);
         STRING2STRING &GetProperties();
-        string ToString();
-        bool Matches(string sGrammarExpectation);
-        string GetValueForExpectation(string sGrammarExpectation);
-        bool matchesSlot( string slot, string pattern);
+        string ToString(); -> Core
+        bool Matches(string sGrammarExpectation); -> used by InteractionEventManager.{LastEventMatches, LastInputMatches}
+        string GetValueForExpectation(string sGrammarExpectation); -> used by InteractionEventManager.GetValueForExpectation
+        bool matchesSlot( string slot, string pattern); -> used inside
 
 file: Agents/CoreAgents/OutputManagerAgent.h
     class COutputHistory

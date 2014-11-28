@@ -136,5 +136,23 @@ StateManagerAgent.cpp
     + the s2sDialogStateNames is an optional map loaded from a file with the LoadDialogStateNames method
     + no one is setting the broadcast address and no method is using it
 
+InteractionEventManager.cpp
+    + No one is using the vpieEventHistory attribute
+    + No one is using HasEvent
+    + No one is using LastInputMatches
+    + pieLastInput is equal to pieLastEvent when its type is IET_USER_UTT_END
+    + The basic interaction is to call WaitForEvent and then GetNextEvent as DMCoreAgent.AcquireNextEvent does. The blocking is split by the DMBridge thread with a call to SignalInteractionEventArrived.
+    + The published interface to query the pieLast{Event, Input} should be minimized.
+    + This class shouldn't create a CGalaxyInteractionEvent if it's going to be portable
+
+InteractionEvent.cpp
+    + The relationship of this class with its subclass GalaxyInteractionEvent is that the second one has the Galaxy's gfEvent attribute which is used to build up the InteractionEvent in the constructor.
+    + All of its methods are accessors of its attributes
+    + No one is using GetID
+    + The confidence is gotten in DMCoreAgent.bindConcepts through InteractionEventManager.GetLastEventConfidence and setted to the new concept in the updating process.
+    + No one is using GetFloatProperty
+    + The only use of HasProperty is in DMCoreAgent.AcquireNextEvent to test if the property exists before getting it, i could be replaced with a null default value
+    + No one is using SetProperty
+
 TrafficManagerAgnet.cpp
     + No one uses this class

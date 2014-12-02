@@ -776,12 +776,12 @@ file: Agents/CoreAgents/OutputManagerAgent.h
         static CAgent* AgentFactory(string sAName, string sAConfiguration);
         virtual void Reset();
         void SetOutputClass(string sAOutputClass);
-        bool RegisterOutputDevice(string sName, string sServerCall, int iParams);
-        void SetDefaultOutputDevice(string sName);
+        bool RegisterOutputDevice(string sName, string sServerCall, int iParams); -> used in OUTPUT_DEVICE and DEFAULT_OUPUT_DEVICE
+        void SetDefaultOutputDevice(string sName); -> used in DEFAULT_OUTPUT_DEVICE
         TOutputDevice *GetOutputDevice(string sName);
         TOutputDevice *GetDefaultOutputDevice();
         string GetDefaultOutputDeviceName();
-        vector<COutput*> Output(CDialogAgent* pGeneratorAgent, string sPrompts, TFloorStatus fsFinalFloorStatus);
+        vector<COutput*> Output(CDialogAgent* pGeneratorAgent, string sPrompts, TFloorStatus fsFinalFloorStatus); -> used by the groundingAgents and DialogAgents
         void Repeat();
         void Notify(int iOutputId, int iBargeinPos, string sConveyance, string sTaggedUtt);
         void PreliminaryNotify(int iOutputId, string sTaggedUtt);

@@ -1,5 +1,4 @@
 Registry.cpp
-    + The Registry is good.
     + What's the protocol to create/register/initialize a new Agent into the Registry? -> It's all in the CreateDialogTree diagram, to sum up:
        +.1 first it's called Create by the Registry, who creates its concepts, calls its subagents and OnCreation callback.
        +.2 then it's called Initialize by the DTTManager, who callback OnInitialization with the groundingModel already instantiated, this callback is also called by Reset
@@ -153,6 +152,25 @@ InteractionEvent.cpp
     + No one is using GetFloatProperty
     + The only use of HasProperty is in DMCoreAgent.AcquireNextEvent to test if the property exists before getting it, i could be replaced with a null default value
     + No one is using SetProperty
+
+OutputHistory.cpp
+    + The OutputHistory is only used one time in OutputManager.Repeat to log something and in Repeat to choose between candidates to repeat an already sent Output
+
+OutputManager.cpp
+    + No one is using SetOutputClass, so the only class used is FrameOutput -> sOutputClass is pointless, it's used to build an output object in Output
+    + There's no one using the device abstraction except some of the Outputs. LFOutput is the only one to use sServerCall.
+    + The Output method creates the Output, output sends it to the different communication subsystem supported
+    + The critical section is guarding vopRecentOutputs and the history
+    + Notify moves an output from vopRecentOutputs to the history
+    + The main purpose of OutputManager is to send outputs through the communication subsystem and to give back the prompts still active, which are updated by the Notify calls by AcquireNextEvent
+
+Output.cpp
+    + vcpConcepts and vbNotifyConcept are defined by subclasses
+    + sGeneratorAgnetName is only used in GetConceptByName
+    + No one is using GetGeneratorAgentName
+    + No one is using SetDialogStateIndex
+    + No one is using SetDialogState
+    + When a user finishes his input, OutputManager.Notify is called, which calls Output.NotifyConceptConveyance for every Concept related to the user's input, this function calls the SetConveyance of the Concepts related to the Output
 
 TrafficManagerAgnet.cpp
     + No one uses this class

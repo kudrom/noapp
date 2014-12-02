@@ -336,7 +336,7 @@ file: Concepts/Concept.h
         int GetTurnsSinceLastUpdated();
         void SetWaitingConveyance();
         void ClearWaitingConveyance(); -> used by NotifyChange
-        virtual void SetConveyance(TConveyance cConveyance);
+        virtual void SetConveyance(TConveyance cConveyance); -> used by OutputManager.NotifyConceptConveyance
         TConveyance GetConveyance();
         virtual void ClearConceptNotificationPointer(); -> used by subclasses
         virtual void ReOpen(); -> called by ReOpenConcept in DialogAgent
@@ -425,7 +425,7 @@ file: Agents/CoreAgents/DMCoreAgent.h
         TSystemActionOnConcept GetSystemActionOnConcept(CConcept* pConcept);
         void SignalExplicitConfirmOnConcept(CConcept* pConcept);
         void SignalImplicitConfirmOnConcept(CConcept* pConcept);
-        void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept);
+        void SignalUnplannedImplicitConfirmOnConcept(int iState, CConcept* pConcept); -> used by OutputManager.PreliminaryNotify
         void SignalAcceptOnConcept(CConcept* pConcept);
 
         // Private API
@@ -747,91 +747,91 @@ file: Events/GalaxyInteractionEvent.h
 file: Agents/CoreAgents/OutputManagerAgent.h
     class COutputHistory
     DATA:
-        vector<string> vsUtterances;
-        vector<COutput*> vopOutputs;
-        unsigned int uiCurrentID;
+        vector<string> vsUtterances; -> Core
+        vector<COutput*> vopOutputs; -> Core
+        unsigned int uiCurrentID; -> Core
     BEHAVIOUR:
-        COutputHistory();
-        virtual ~COutputHistory();
-        string ToString();
-        unsigned int AddOutput(COutput* pOutput, string sUtterance);
-        void Clear();
-        unsigned int GetSize();
-        string GetUtteranceAt(unsigned int iIndex);
+        COutputHistory(); -> Core
+        virtual ~COutputHistory(); -> Core
+        string ToString(); -> Core
+        unsigned int AddOutput(COutput* pOutput, string sUtterance); -> used in OutputManager.{Notify, output}
+        void Clear(); -> used in the destructor and in OutputManager.Reset
+        unsigned int GetSize(); used in OutputManager
+        string GetUtteranceAt(unsigned int iIndex); -> used in OutputManager.Repeat
         COutput* GetOutputAt(unsigned int iIndex);
         COutput* operator[](unsigned int iIndex);
 
     class COutputManagerAgent : public CAgent
     DATA:
-        COutputHistory ohHistory;
-        vector <TOutputDevice> vodOutputDevices;
-        unsigned int iDefaultOutputDevice;
-        vector <COutput *> vopRecentOutputs;
-        int iOutputCounter;
-        CRITICAL_SECTION csCriticalSection;
-        string sOutputClass;
+        COutputHistory ohHistory; -> core
+        vector <TOutputDevice> vodOutputDevices; -> semicore
+        unsigned int iDefaultOutputDevice; -> semicore
+        vector <COutput *> vopRecentOutputs; -> core
+        int iOutputCounter; -> core
+        CRITICAL_SECTION csCriticalSection; -> Core
+        string sOutputClass; -> semicore
     BEHAVIOUR:
-        COutputManagerAgent(string sAName, string sAConfiguration, string sAType);
-        virtual ~COutputManagerAgent();
-        static CAgent* AgentFactory(string sAName, string sAConfiguration);
-        virtual void Reset();
+        COutputManagerAgent(string sAName, string sAConfiguration, string sAType); -> Core
+        virtual ~COutputManagerAgent(); -> Core
+        static CAgent* AgentFactory(string sAName, string sAConfiguration); -> Core
+        virtual void Reset(); -> Core
         void SetOutputClass(string sAOutputClass);
         bool RegisterOutputDevice(string sName, string sServerCall, int iParams);
         void SetDefaultOutputDevice(string sName);
-        TOutputDevice *GetOutputDevice(string sName);
-        TOutputDevice *GetDefaultOutputDevice();
-        string GetDefaultOutputDeviceName();
+        TOutputDevice *GetOutputDevice(string sName); -> used by output and some Outputs
+        TOutputDevice *GetDefaultOutputDevice(); -> used by LFOutput
+        string GetDefaultOutputDeviceName(); -> used by LFOutput and FrameOutput
         vector<COutput*> Output(CDialogAgent* pGeneratorAgent, string sPrompts, TFloorStatus fsFinalFloorStatus);
-        void Repeat();
+        void Repeat(); -> used by Output
         void Notify(int iOutputId, int iBargeinPos, string sConveyance, string sTaggedUtt); -> used by AcquireNextEvent
         void PreliminaryNotify(int iOutputId, string sTaggedUtt); -> used by AcquireNextEvent
         void CancelConceptNotificationRequest(CConcept* pConcept); -> used by Concept's ClearWaitingConveyance
-        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
+        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept); -> used by Concept.ClearConceptNotificationPointer
         string GetPromptsWaitingForNotification(); -> DMCore thread diagram
-        string output(COutput* pOutput);
-        unsigned int getRecentOutputIndex(int iConceptId);
+        string output(COutput* pOutput); -> used in Output
+        unsigned int getRecentOutputIndex(int iConceptId); -> used inside this class
 
 file: Outputs/Output.h
     class COutput
         friend class COutputHistory;
         friend class COutputManagerAgent;
     DATA:
-        string sGeneratorAgentName;
+        string sGeneratorAgentName; -> semicore
         int iOutputId;
-        int iExecutionIndex;
-        string sDialogState;
+        int iExecutionIndex; -> semicore
+        string sDialogState; -> semicore
         string sAct;
         string sObject;
-        vector<CConcept *> vcpConcepts;
-        vector<bool> vbNotifyConcept;
+        vector<CConcept *> vcpConcepts; -> Core
+        vector<bool> vbNotifyConcept; -> Core
         vector<string> vsFlags;
         string sOutputDeviceName;
         TConveyance cConveyance;
         int iRepeatCounter;
         TFloorStatus fsFinalFloorStatus;
     BEHAVIOUR:
-        COutput();
-        virtual ~COutput();
-        virtual bool Create(string sAGeneratorAgentName, int iAExecutionIndex, string sAPrompt, TFloorStatus fsAFloor, int iAOutputId) = 0;
-        virtual string ToString() = 0;
-        virtual COutput* Clone(int iNewOutputId) = 0;
+        COutput(); -> Core
+        virtual ~COutput(); -> Core
+        virtual bool Create(string sAGeneratorAgentName, int iAExecutionIndex, string sAPrompt, TFloorStatus fsAFloor, int iAOutputId) = 0; -> Used by OutputManager.Output, defined by subclasses
+        virtual string ToString() = 0; -> Core
+        virtual COutput* Clone(int iNewOutputId) = 0; -> Core
         string GetGeneratorAgentName();
-        int GetDialogStateIndex();
+        int GetDialogStateIndex(); -> used in OutputManager.output
         void SetDialogStateIndex(int iAExecutionIndex);
-        string GetDialogState();
+        string GetDialogState(); -> used in OutputManager.output
         void SetDialogState(string sADialogState);
-        void SetConveyance(TConveyance cAConveyance);
-        TConveyance GetConveyance();
+        void SetConveyance(TConveyance cAConveyance); -> used in OutputManager.Notify
+        TConveyance GetConveyance(); -> used in MAInform
         void SetAct(string sAAct);
         string GetAct();
         void SetFinalFloorStatus(TFloorStatus fsAFloor);
         TFloorStatus GetFinalFloorStatus();
         string GetFinalFloorStatusLabel();
         bool CheckFlag(string sFlag);
-        void NotifyConceptConveyance(string sConceptName, TConveyance cAConveyance);
-        virtual CConcept* GetConceptByName(string sConceptName);
-        void CancelConceptNotificationRequest(CConcept* pConcept);
-        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept);
+        void NotifyConceptConveyance(string sConceptName, TConveyance cAConveyance); -> Used by OutputManager.Notify
+        virtual CConcept* GetConceptByName(string sConceptName); -> used by OutputManager.PreliminaryNotify
+        void CancelConceptNotificationRequest(CConcept* pConcept); -> Used by OutputManager.CancelConceptNotificationRequest
+        void ChangeConceptNotificationPointer(CConcept* pOldConcept, CConcept* pNewConcept); -> Used by OutputManager.ChangeConceptNotificationPointer
         int GetRepeatCounter();
         void IncrementRepeatCounter();
         virtual void clone(COutput* pOutput, int iNewOutputId);
